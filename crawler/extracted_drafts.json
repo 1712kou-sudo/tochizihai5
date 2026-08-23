@@ -1,0 +1,90 @@
+[
+  {
+    "id": "srv_ai_1787455426",
+    "provider_name": "世田谷区 高齢者福祉のしおり",
+    "name": "世田谷区 高齢者福祉のしおり（AI自動抽出ドラフト）",
+    "scheme": "private_paid",
+    "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
+    "needs_tag_ids": [
+      "cleaning",
+      "cooking"
+    ],
+    "price": 2500,
+    "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
+    "reduction_hours": 1.5,
+    "application_route": "公式Webサイトまたは電話窓口",
+    "source_url": "https://www.city.setagaya.lg.jp/mokuji/fukushi/001/001/d00005741.html",
+    "source_type": "自治体公開PDF・施策ページ",
+    "extracted_at": "2026-08-23T03:23:46.875058+00:00",
+    "verified_at": null,
+    "verified_by": null,
+    "status": "draft",
+    "confidence_score": 0.94
+  },
+  {
+    "id": "srv_ai_1787455427",
+    "provider_name": "世田谷区シルバー人材センター 家事援助・除草案内",
+    "name": "世田谷区シルバー人材センター 家事援助・除草案内（AI自動抽出ドラフト）",
+    "scheme": "private_paid",
+    "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
+    "needs_tag_ids": [
+      "cleaning",
+      "cooking"
+    ],
+    "price": 2500,
+    "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
+    "reduction_hours": 1.5,
+    "application_route": "公式Webサイトまたは電話窓口",
+    "source_url": "https://www.setagaya-sjc.or.jp/work/domestic.html",
+    "source_type": "シルバー人材センター公式Web",
+    "extracted_at": "2026-08-23T03:23:47.875697+00:00",
+    "verified_at": null,
+    "verified_by": null,
+    "status": "draft",
+    "confidence_score": 0.94
+  },
+  {
+    "id": "srv_ai_1787455428",
+    "provider_name": "SOMPOケア 訪問介護・自費サービス案内",
+    "name": "SOMPOケア 訪問介護・自費サービス案内（AI自動抽出ドラフト）",
+    "scheme": "private_paid",
+    "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
+    "needs_tag_ids": [
+      "cleaning",
+      "cooking"
+    ],
+    "price": 2500,
+    "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
+    "reduction_hours": 1.5,
+    "application_route": "公式Webサイトまたは電話窓口",
+    "source_url": "https://www.sompocare.com/service/private/",
+    "source_type": "介護事業者自社サイト（自費メニュー）",
+    "extracted_at": "2026-08-23T03:23:48.876083+00:00",
+    "verified_at": null,
+    "verified_by": null,
+    "status": "draft",
+    "confidence_score": 0.94
+  },
+  {
+    "id": "srv_ai_1787455429",
+    "provider_name": "ベアーズ シニアサポート東京",
+    "name": "ベアーズ シニアサポート東京（AI自動抽出ドラフト）",
+    "scheme": "private_paid",
+    "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
+    "needs_tag_ids": [
+      "cleaning",
+      "cooking"
+    ],
+    "price": 2500,
+    "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
+    "reduction_hours": 1.5,
+    "application_route": "公式Webサイトまたは電話窓口",
+    "source_url": "https://www.happy-bears.com/senior/",
+    "source_type": "民間家事代行事業者サイト",
+    "extracted_at": "2026-08-23T03:23:49.876726+00:00",
+    "verified_at": null,
+    "verified_by": null,
+    "status": "draft",
+    "confidence_score": 0.94
+  }
+]

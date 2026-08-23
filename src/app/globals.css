@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    
+    /* ケアタイムライン特有のテーマカラー */
+    --color-family-bg: #FCEBEB;
+    --color-family-text: #791F1F;
+    --color-family-border: #F7C5C5;
+
+    --color-insurance-bg: #E1F5EE;
+    --color-insurance-text: #085041;
+    --color-insurance-border: #B5EAD7;
+
+    --color-paid-bg: #FAECE7;
+    --color-paid-text: #712B13;
+    --color-paid-border: #F3D0C4;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Meiryo", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* スロット切り替えトランジション（仕様: 0.35秒の気持ち良いアニメーション） */
+.slot-transition {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* スライダー用カスタムスタイル */
+input[type="range"] {
+  accent-color: #0f766e;
+}
+
+/* 印刷用A4 1枚最適化スタイル */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12px !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .print-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+  }
+
+  .print-slot {
+    padding: 4px !important;
+    min-height: 58px !important;
+    font-size: 10px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
