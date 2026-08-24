@@ -13,8 +13,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { DAYS_OF_WEEK, NEEDS_TAGS, TIME_PERIODS } from '@/constants/careConstants';
-import { ALL_SERVICES } from '@/data/servicesSeed';
-import { NeedsCategory } from '@/types';
+import { NeedsCategory, Service } from '@/types';
 import {
   BarChart3,
   MapPin,
@@ -96,7 +95,11 @@ const DISTRICT_BLANK_DATA = [
   { district: '練馬・豊玉地域', elderlySingles: 6300, services: 61, ratio: '103世帯/所', level: 'low' },
 ];
 
-export const GovDashboard: React.FC = () => {
+interface GovDashboardProps {
+  services: Service[];
+}
+
+export const GovDashboard: React.FC<GovDashboardProps> = ({ services }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('last_30_days');
 
   // 空白度が特に高い（85以上）枠の数
@@ -115,7 +118,7 @@ export const GovDashboard: React.FC = () => {
         (t) => t.id
       )
     );
-    const targets = ALL_SERVICES.filter(
+    const targets = services.filter(
       (svc) => svc.status === 'approved' && svc.needsTagIds.some((id) => tagIds.has(id))
     );
     const matrix: Record<string, number> = {};

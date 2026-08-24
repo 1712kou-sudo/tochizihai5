@@ -10,7 +10,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ALL_SERVICES } from '@/data/servicesSeed';
 import { Service } from '@/types';
 import { SCHEME_LABELS } from '@/utils/colors';
 import {
@@ -27,28 +26,16 @@ import {
   Search,
 } from 'lucide-react';
 
-export const AdminPipeline: React.FC = () => {
-  const [servicesList, setServicesList] = useState<Service[]>(ALL_SERVICES);
+interface AdminPipelineProps {
+  services: Service[];
+  onUpdateStatus: (id: string, newStatus: 'approved' | 'rejected' | 'draft') => void;
+}
+
+export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdateStatus }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isCrawling, setIsCrawling] = useState<boolean>(false);
   const [crawlLogs, setCrawlLogs] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  // 承認ステータスの切り替え
-  const handleUpdateStatus = (id: string, newStatus: 'approved' | 'rejected' | 'draft') => {
-    setServicesList((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              status: newStatus,
-              verifiedAt: new Date().toISOString().split('T')[0],
-              verifiedBy: '管理者（人手確認）',
-            }
-          : s
-      )
-    );
-  };
 
   // AI収集スクリプトのシミュレーション実行（デモ用）
   const handleRunCrawlerDemo = () => {
@@ -69,7 +56,7 @@ export const AdminPipeline: React.FC = () => {
     }, 2500);
   };
 
-  const filteredServices = servicesList.filter((s) => {
+  const filteredServices = services.filter((s) => {
     if (filterStatus !== 'all' && s.status !== filterStatus) return false;
     if (
       searchQuery &&
@@ -141,24 +128,24 @@ export const AdminPipeline: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
           <span className="text-xs text-stone-500 block">総サービス件数</span>
-          <span className="text-2xl font-bold text-stone-900">{servicesList.length} 件</span>
+          <span className="text-2xl font-bold text-stone-900">{services.length} 件</span>
         </div>
         <div className="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
           <span className="text-xs text-emerald-600 font-bold block">公開中（Approved）</span>
           <span className="text-2xl font-bold text-emerald-700">
-            {servicesList.filter((s) => s.status === 'approved').length} 件
+            {services.filter((s) => s.status === 'approved').length} 件
           </span>
         </div>
         <div className="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
           <span className="text-xs text-amber-600 font-bold block">人手承認待ち（Draft）</span>
           <span className="text-2xl font-bold text-amber-700">
-            {servicesList.filter((s) => s.status === 'draft').length} 件
+            {services.filter((s) => s.status === 'draft').length} 件
           </span>
         </div>
         <div className="bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
           <span className="text-xs text-rose-600 font-bold block">却下 / 非公開</span>
           <span className="text-2xl font-bold text-rose-700">
-            {servicesList.filter((s) => s.status === 'rejected' || s.status === 'stale').length} 件
+            {services.filter((s) => s.status === 'rejected' || s.status === 'stale').length} 件
           </span>
         </div>
       </div>
@@ -172,7 +159,7 @@ export const AdminPipeline: React.FC = () => {
               filterStatus === 'all' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-700'
             }`}
           >
-            すべて ({servicesList.length})
+            すべて ({services.length})
           </button>
           <button
             onClick={() => setFilterStatus('approved')}
@@ -299,14 +286,14 @@ export const AdminPipeline: React.FC = () => {
                       <div className="flex items-center justify-center space-x-1.5">
                         <button
                           type="button"
-                          onClick={() => handleUpdateStatus(srv.id, 'approved')}
+                          onClick={() => onUpdateStatus(srv.id, 'approved')}
                           className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold shadow-xs transition-all"
                         >
                           承認・公開
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleUpdateStatus(srv.id, 'rejected')}
+                          onClick={() => onUpdateStatus(srv.id, 'rejected')}
                           className="px-2 py-1 rounded-lg bg-stone-200 hover:bg-rose-100 hover:text-rose-700 text-stone-700 text-[10px] font-medium transition-all"
                         >
                           却下

@@ -51,20 +51,23 @@ import {
 } from 'lucide-react';
 
 /** 入力条件と予算から、サービスを当てはめ済みのタイムラインを組み立てる */
-function buildOptimizedSlots(input: UserInputData, budget: number): TimelineSlot[] {
+function buildOptimizedSlots(input: UserInputData, budget: number, allServices: Service[]): TimelineSlot[] {
   const base = generateInitialTimeline(input);
   return optimizeTimeline(
     base,
     input.careLevel,
     input.householdType,
     budget,
-    ALL_SERVICES
+    allServices
   ).optimizedSlots;
 }
 
 export default function HomePage() {
   // ナビゲーションタブ
   const [activeTab, setActiveTab] = useState<ActiveTab>('timeline');
+
+  // サービスマスター（承認操作で更新される共有ステート）
+  const [services, setServices] = useState<Service[]>(ALL_SERVICES);
 
   // 入力フォームデータ（初期値はデモサンプル）
   const [userInput, setUserInput] = useState<UserInputData>(DEMO_SAMPLE_INPUT);
@@ -82,7 +85,7 @@ export default function HomePage() {
 
   // 現在表示されているスロット（最初からサービスを当てはめた状態で始める）
   const [currentSlots, setCurrentSlots] = useState<TimelineSlot[]>(
-    () => buildOptimizedSlots(DEMO_SAMPLE_INPUT, DEMO_SAMPLE_INPUT.monthlyBudget)
+    () => buildOptimizedSlots(DEMO_SAMPLE_INPUT, DEMO_SAMPLE_INPUT.monthlyBudget, ALL_SERVICES)
   );
 
   // 指標
@@ -98,12 +101,25 @@ export default function HomePage() {
   // 予算スライダー変更（即時再割り当て）
   const handleBudgetChange = (newBudget: number) => {
     setMonthlyBudget(newBudget);
-    setCurrentSlots(buildOptimizedSlots(userInput, newBudget));
+    setCurrentSlots(buildOptimizedSlots(userInput, newBudget, services));
   };
 
   // 手動調整をやめて、最適な割り当てに戻す
   const handleResetAssignments = () => {
-    setCurrentSlots(buildOptimizedSlots(userInput, monthlyBudget));
+    setCurrentSlots(buildOptimizedSlots(userInput, monthlyBudget, services));
+  };
+
+  // サービス承認ステータスの更新（AdminPipelineから呼ばれる）
+  const handleUpdateServiceStatus = (id: string, newStatus: 'approved' | 'rejected' | 'draft') => {
+    setServices((prev) => {
+      const updated = prev.map((s) =>
+        s.id === id
+          ? { ...s, status: newStatus, verifiedAt: new Date().toISOString().split('T')[0], verifiedBy: '管理者（人手確認）' }
+          : s
+      );
+      setCurrentSlots(buildOptimizedSlots(userInput, monthlyBudget, updated));
+      return updated;
+    });
   };
 
   // スロットの手動サービス変更
@@ -153,7 +169,7 @@ export default function HomePage() {
     setMonthlyBudget(DEMO_SAMPLE_INPUT.monthlyBudget);
     setIsWizardOpen(false);
     setActiveTab('timeline');
-    setCurrentSlots(buildOptimizedSlots(DEMO_SAMPLE_INPUT, DEMO_SAMPLE_INPUT.monthlyBudget));
+    setCurrentSlots(buildOptimizedSlots(DEMO_SAMPLE_INPUT, DEMO_SAMPLE_INPUT.monthlyBudget, services));
   };
 
   // ウィザード完了時：サービスを当てはめた状態のタイムラインへ進む
@@ -161,7 +177,7 @@ export default function HomePage() {
     setUserInput(newData);
     setMonthlyBudget(newData.monthlyBudget);
     setIsWizardOpen(false);
-    setCurrentSlots(buildOptimizedSlots(newData, newData.monthlyBudget));
+    setCurrentSlots(buildOptimizedSlots(newData, newData.monthlyBudget, services));
   };
 
   // 印刷ダイアログの起動
@@ -335,10 +351,12 @@ export default function HomePage() {
           )}
 
           {/* タブ2: 自治体ダッシュボード */}
-          {activeTab === 'gov' && <GovDashboard />}
+          {activeTab === 'gov' && <GovDashboard services={services} />}
 
           {/* タブ3: AI収集＆承認管理 */}
-          {activeTab === 'admin' && <AdminPipeline />}
+          {activeTab === 'admin' && (
+            <AdminPipeline services={services} onUpdateStatus={handleUpdateServiceStatus} />
+          )}
         </div>
       </main>
 
