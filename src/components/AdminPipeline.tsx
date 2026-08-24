@@ -45,7 +45,7 @@ const MUNICIPALITIES: Record<string, { prefix: string; seedUrl: string; tel: str
   },
   '渋谷区': {
     prefix: 'SBY',
-    seedUrl: 'https://www.city.shibuya.tokyo.jp/fukushi/koresha/',
+    seedUrl: 'https://www.city.shibuya.tokyo.jp/kenko/koreisha-seikatsu/koreisha-shien/',
     tel: '03-3463-1211',
   },
 };
