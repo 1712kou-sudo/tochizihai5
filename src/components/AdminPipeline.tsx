@@ -20,7 +20,6 @@ import {
   Bot,
   RefreshCw,
   Search,
-  Copy,
   MapPin,
   Link as LinkIcon,
   Check,
@@ -88,8 +87,6 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
   const [customName, setCustomName] = useState<string>('');
   const [customUrl, setCustomUrl] = useState<string>('');
   const [customPrefix, setCustomPrefix] = useState<string>('XXX');
-  const [copied, setCopied] = useState<boolean>(false);
-
   // 収集
   const [isCollecting, setIsCollecting] = useState<boolean>(false);
   const [collectProgress, setCollectProgress] = useState<string>('');
@@ -100,10 +97,6 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
   const activeCfg = MUNICIPALITIES[selectedMunicipality];
   const activeUrl = useCustomUrl ? customUrl : activeCfg?.seedUrl ?? '';
   const activePrefix = useCustomUrl ? customPrefix : activeCfg?.prefix ?? 'XXX';
-
-  const cliCommand = useCustomUrl
-    ? `python crawler/collect_services.py --url "${activeUrl}" --name ${activeName} --prefix ${activePrefix}`
-    : `python crawler/collect_services.py --municipality ${selectedMunicipality}`;
 
   /** CollectedItem を Service 型に変換（デフォルト値で補完） */
   const toService = (item: CollectedItem, providerName: string): Service => ({
@@ -217,13 +210,6 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     setCollectedItems(allItems);
     setCollectProgress(`収集完了 — ${allItems.length} 件抽出`);
     setIsCollecting(false);
-  };
-
-  const handleCopyCommand = () => {
-    navigator.clipboard.writeText(cliCommand).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
   };
 
   const filteredServices = services.filter((s) => {
@@ -370,22 +356,6 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
               </div>
             </div>
           )}
-
-          {/* CLIコマンド表示 */}
-          <div className="bg-stone-950 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
-            <code className="text-emerald-400 text-xs font-mono flex-1 min-w-0 truncate">
-              {cliCommand}
-            </code>
-            <button
-              type="button"
-              onClick={handleCopyCommand}
-              title="コマンドをコピー"
-              className="shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-[11px] font-bold transition-colors"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'コピー済み' : 'コピー'}
-            </button>
-          </div>
 
           {/* 実行ボタン */}
           <div className="flex items-center gap-3 flex-wrap">
