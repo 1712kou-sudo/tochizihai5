@@ -456,58 +456,61 @@ export const RESTRICTION_RULES: RestrictionRule[] = [
 ];
 
 /**
- * 入力例サンプル（要介護2・同居家族あり・家族負担が大きいケース）
+ * 入力例サンプル（練馬区実データ対応版）
+ * 要介護2・独居・家族が遠方のケース
+ * - bath_care は平日日中に配置（NRM-001 は平日日中のみ対応）
+ * - safety_check_day は NRM-010 が 24/7 カバー
+ * - スライダーを 0 に下げると bath_care（月約1,730円）が外れる動作を確認できる
  */
 export const DEMO_SAMPLE_INPUT: UserInputData = {
   careLevel: 'care_2',
-  householdType: 'living_together',
+  householdType: 'single',
   selectedNeeds: [
     'cooking',
-    'hospital_escort',
     'bath_care',
+    'safety_check_day',
+    'hospital_escort',
     'day_service',
-    'gardening_weed',
-    'meal_delivery_check',
     'cleaning',
-    'night_safety',
     'short_stay',
+    'weekend_relief',
   ],
   slotNeeds: {
     'mon-morning': 'cooking',
-    'mon-daytime': 'day_service',
+    'mon-daytime': 'bath_care',
     'mon-evening': 'cooking',
-    'mon-night': 'night_safety',
+    'mon-night': 'safety_check_day',
 
     'tue-morning': 'cooking',
     'tue-daytime': 'hospital_escort',
-    'tue-evening': 'bath_care',
-    'tue-night': 'night_safety',
+    'tue-evening': 'cooking',
+    'tue-night': null,
 
     'wed-morning': 'cooking',
-    'wed-daytime': 'cleaning',
+    'wed-daytime': 'bath_care',
     'wed-evening': 'cooking',
     'wed-night': null,
 
     'thu-morning': 'cooking',
     'thu-daytime': 'day_service',
     'thu-evening': 'cooking',
-    'thu-night': 'night_safety',
+    'thu-night': 'safety_check_day',
 
     'fri-morning': 'cooking',
-    'fri-daytime': 'meal_delivery_check',
-    'fri-evening': 'bath_care',
+    'fri-daytime': 'cleaning',
+    'fri-evening': 'cooking',
     'fri-night': null,
 
     'sat-morning': 'cooking',
-    'sat-daytime': 'gardening_weed',
-    'sat-evening': 'cooking',
-    'sat-night': 'night_safety',
+    'sat-daytime': 'short_stay',
+    'sat-evening': 'weekend_relief',
+    'sat-night': null,
 
     'sun-morning': 'cooking',
     'sun-daytime': 'short_stay',
     'sun-evening': 'cooking',
-    'sun-night': 'night_safety',
+    'sun-night': null,
   },
-  monthlyBudget: 25000,
+  monthlyBudget: 5000,
   postalCode: '176-0001',
 };

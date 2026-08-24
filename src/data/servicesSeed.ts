@@ -365,7 +365,7 @@ export const SERVICES_SEED: Service[] = [
     name: '自立支援住宅改修給付（設備改修）',
     scheme: 'municipal_extra',
     description: '1割自己負担。種目ごとに限度額あり。介護保険住宅改修の『浴槽の取替』『便器の洋式化』と併用可。',
-    needsTagIds: ["handyman_tasks","bath_care"],
+    needsTagIds: ["handyman_tasks"],
     targetCareLevels: ["support_1","support_2","care_1","care_2","care_3","care_4","care_5"],
     targetHouseholds: ["single","elderly_only","living_together","long_distance"],
     availableDays: ["mon","tue","wed","thu","fri"],
