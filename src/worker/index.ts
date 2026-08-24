@@ -90,6 +90,7 @@ const NEGATIVE_TERMS = [
 
 /** HTMLから本文テキストを抽出 */
 function extractText(html: string): string {
+  // script/style を除去してからタグを取り除く（正規表現の lazy match バグを回避）
   let t = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ');
   t = t.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ');
   t = t.replace(/<[^>]+>/g, ' ');
@@ -319,8 +320,9 @@ export default {
 
         pageText = extractText(html);
 
-        // 否定語チェック（本文テキストレベル）
-        if (hasNegativeTerm(pageText.slice(0, 500))) {
+        // 否定語チェック（メインコンテンツ冒頭のみ・ナビゲーション誤検知防止のため200文字）
+        // タイトルチェックで捕捉できなかった明確なノイズページを除外
+        if (hasNegativeTerm(pageText.slice(0, 200))) {
           return jsonRes({
             services: [],
             skipped: true,
@@ -338,7 +340,7 @@ export default {
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-6',
-            max_tokens: 2048,
+            max_tokens: 4096,
             messages: [{
               role: 'user',
               content: `${EXTRACT_PROMPT}\n\n---\nURL: ${targetUrl}\n自治体: ${municipalityName}\nページタイトル: ${pageTitle}\n\n${pageText}`,
