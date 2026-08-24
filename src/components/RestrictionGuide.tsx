@@ -51,7 +51,7 @@ export const RestrictionGuide: React.FC<RestrictionGuideProps> = ({
         />
       </button>
 
-      <div className="collapse" data-open={isOpen ? 'true' : 'false'}>
+      <div className="accordion-panel" data-open={isOpen ? 'true' : 'false'}>
         <div>
       <div className="px-4 sm:px-5 pb-5 pt-1 space-y-4 border-t border-stone-100">
         <p className="text-xs text-stone-500">

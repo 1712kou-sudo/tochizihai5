@@ -99,7 +99,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: 'なお、1回の利用につき200円の利用者負担がある。（S1 p82 OCR取得）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.75,
   },
   {
@@ -123,7 +123,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '調髪1回につき500円の本人負担があります。（S2 2024 p06 OCR）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.7,
   },
   {
@@ -147,7 +147,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: 'なお、利用券1枚につき100円の利用者負担がある。（S1 p85 OCR取得）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.7,
   },
   {
@@ -171,7 +171,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '薬品消毒（8月）は100円、水洗い（11月または12月）は300円の利用者負担。乾燥消毒（年10回）は無料。（S1 p85 OCR取得）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.75,
   },
   {
@@ -195,7 +195,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '区が事業者へ予約料・迎車料を支払う。運賃と事業者所定の加算料金は利用者負担。実額は未取得。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.8,
   },
   {
@@ -219,7 +219,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '車いす: 高齢者は500円、障害者手帳所持者および65歳未満の方は200円。介護用ベッド: 高齢者は1,500円、障害者手帳所持者および65歳未満の方は500円。（S1 p83 OCR取得）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.75,
   },
   {
@@ -243,7 +243,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '試用貸与（無料）。S1 p87 OCR確認。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.9,
   },
   {
@@ -267,7 +267,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: 'なお、費用負担: 1回につき500円。（S1 p87 OCR確認）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.85,
   },
   {
@@ -291,7 +291,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '1回1時間以内、複数メニューの利用可。年6回。金額はS2(2019)由来で要再確認。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.75,
   },
   {
@@ -315,7 +315,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '緊急通報400円/月(課税)・300円/月(非課税)、センサー100円/月(課税)。見守り訪問・電話は無料。配食は実費。（S1 p91 OCR）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.75,
   },
   {
@@ -339,7 +339,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '自動消火器等の給付。費用負担の記述: S2 2024ではガス安全システムは廃止（令和3年度以降実績なし）。自動消火器は継続。（S2 p05 OCR）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.8,
   },
   {
@@ -363,7 +363,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '利用者負担は給付費の1割。腰掛便座51,500円給付→負担5,150円、入浴補助用具90,000円→9,000円、歩行支援用具47,000円→4,700円、スロープ50,500円→5,050円、シルバーカー19,000円→1,900円、安全つえ5,000円→500円、電磁調理器15,000円→1,500円。（S2 2024 p79 OCR）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.9,
   },
   {
@@ -387,7 +387,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '1割自己負担。給付限度額は介護保険住宅改修費（167,400円相当）と同等か要確認。S2(2024)p03 OCR参照。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.75,
   },
   {
@@ -411,7 +411,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '1割自己負担。種目ごとに限度額あり。介護保険住宅改修の『浴槽の取替』『便器の洋式化』と併用可。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.8,
   },
   {
@@ -435,7 +435,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '緊急ショートステイ 1泊 3,000円 食費等実費相当額あり。（S1 p86 OCR取得）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.8,
   },
   {
@@ -459,7 +459,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '緊急保護利用 初期の利用者負担なし、食費等実費相当額別途あり。（S1 p86 OCR取得）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.8,
   },
   {
@@ -483,7 +483,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '無料。見守り実人数: 令和6年度 15,231人。（S1 p87 OCR）',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.9,
   },
   {
@@ -507,7 +507,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: 'S2(2019)由来。出張は別途1,000円。S2(2024)での確認未了。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.4,
   },
   {
@@ -531,7 +531,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '区立施設は基本無料。地域団体によっては一部有料。詳細は各団体へ。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.9,
   },
   {
@@ -555,7 +555,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '食費相当分。会場により異なる。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.7,
   },
   {
@@ -579,7 +579,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '全23回・週2回・約3か月の教室。実施場所はつらつセンター等10か所。S2(2019)由来。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.7,
   },
   {
@@ -603,7 +603,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: 'S2(2019)由来。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.7,
   },
   {
@@ -627,7 +627,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '会食はデイサービスセンターへの自己通所で1食600円、配食は事業者により異なる（旧版440〜670円）。要再確認。J3（配食パンフレット）は取得未了。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.65,
   },
   {
@@ -651,7 +651,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '1時間あたり700〜1,000円。S2(2019)由来。社協サイト（S10）で最新料金の確認が必須。今回取得未了。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.5,
   },
   {
@@ -675,7 +675,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '1時間あたり1,000〜1,300円。S2(2019)由来。社協サイト（S10）で最新料金の確認が必須。通院付き添いは保険外ニーズの最頻出項目のため優先確認。今回取得未了。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.5,
   },
   {
@@ -699,7 +699,7 @@ export const SERVICES_SEED: Service[] = [
     priceSourceSnippet: '支給額。介護者に年1回。負の値は利用者への支給を表す。S2(2019)由来。要再確認。注意: 『サービスを使わないこと』が条件のため、本プロダクトの推奨ロジックと衝突する。表示時に必ず注意書きを付けること。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.7,
   }
 ];
@@ -736,7 +736,7 @@ export const INSURANCE_SERVICES_SEED: Service[] = [
     priceSourceSnippet: '訪問介護相当サービス 1回225〜230単位（1割負担）。J1（080801houmon.xlsx）より。地域区分加算含む概算。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.8,
   },
   {
@@ -760,7 +760,7 @@ export const INSURANCE_SERVICES_SEED: Service[] = [
     priceSourceSnippet: '通所介護相当サービス 1回298〜305単位（1割負担）。J1（080801tuusho.xlsx）より。地域区分加算含む概算。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.8,
   },
 
@@ -788,7 +788,7 @@ export const INSURANCE_SERVICES_SEED: Service[] = [
     priceSourceSnippet: '訪問介護 生活援助45分以上 225単位 → 利用者1割負担225円（地域区分・加算別途）。令和6年度改定後。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.95,
   },
   {
@@ -812,7 +812,7 @@ export const INSURANCE_SERVICES_SEED: Service[] = [
     priceSourceSnippet: '訪問介護 身体介護30分以上1時間未満 396単位 → 利用者1割負担396円（地域区分・加算別途）。令和6年度改定後。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.95,
   },
   {
@@ -836,7 +836,7 @@ export const INSURANCE_SERVICES_SEED: Service[] = [
     priceSourceSnippet: '通所介護 要介護2 7時間以上8時間未満 795〜895単位 → 利用者1割負担795〜895円（地域区分・加算別途）。食費・日常生活費は実費。令和6年度改定後。',
     verifiedAt: '2026-08-23',
     verifiedBy: 'nerima_pipeline_20260823',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.9,
   },
 ];
@@ -866,7 +866,7 @@ export const SERVICES_SEED_SETAGAYA: Service[] = [
     priceSourceSnippet: '1食400円〜（協力団体等により異なります。）',
     verifiedAt: '2026-08-24',
     verifiedBy: 'setagaya_playwright_20260824',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.97,
   },
   {
@@ -890,7 +890,7 @@ export const SERVICES_SEED_SETAGAYA: Service[] = [
     priceSourceSnippet: 'システム設置時に利用者負担金として8,000円、光回線等の利用者は非常用電源に別途上限4,000円がかかります。（住民税非課税の方は免除）',
     verifiedAt: '2026-08-24',
     verifiedBy: 'setagaya_playwright_20260824',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.98,
   },
   {
@@ -914,7 +914,7 @@ export const SERVICES_SEED_SETAGAYA: Service[] = [
     priceSourceSnippet: '補助額は1人当たり最大月額1,000円です。（初期費用・その他の費用は除く）',
     verifiedAt: '2026-08-24',
     verifiedBy: 'setagaya_playwright_20260824',
-    status: 'draft',
+    status: 'approved',
     confidenceScore: 0.96,
   },
 ];

@@ -458,23 +458,23 @@ body,
 .press-sm.is-pressed { transform: scale(0.97); }
 
 /* ============================================================
-   .collapse — 高さの開閉（max-height の固定値は使わない）
+   .accordion-panel — 高さの開閉（max-height の固定値は使わない）
    ============================================================ */
-.collapse {
+.accordion-panel {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows var(--dur-base) var(--ease-inout);
 }
-.collapse[data-open='true'] {
+.accordion-panel[data-open='true'] {
   grid-template-rows: 1fr;
 }
-.collapse > * {
+.accordion-panel > * {
   min-height: 0;
   overflow: hidden;
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-in);
 }
-.collapse[data-open='true'] > * {
+.accordion-panel[data-open='true'] > * {
   opacity: 1;
   transition: opacity var(--dur-base) var(--ease-out) 80ms;
 }
@@ -717,8 +717,8 @@ input[type="range"]:active::-moz-range-thumb {
     transform: none !important;
     filter: none !important;
   }
-  .collapse { grid-template-rows: 1fr !important; }
-  .collapse > * {
+  .accordion-panel { grid-template-rows: 1fr !important; }
+  .accordion-panel > * {
     opacity: 1 !important;
     overflow: visible !important;
   }
