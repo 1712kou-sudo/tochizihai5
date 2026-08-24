@@ -7,7 +7,7 @@
  */
 
 interface Env {
-  ASSETS: Fetcher;
+  ASSETS: { fetch(request: Request): Promise<Response> };
   ANTHROPIC_API_KEY: string;
 }
 
