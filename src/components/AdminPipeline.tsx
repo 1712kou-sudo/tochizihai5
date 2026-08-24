@@ -9,22 +9,70 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Service } from '@/types';
 import { SCHEME_LABELS } from '@/utils/colors';
 import {
-  Database,
   Play,
   CheckCircle,
   XCircle,
   AlertTriangle,
   ExternalLink,
-  ShieldAlert,
   Bot,
   Terminal,
   RefreshCw,
   Search,
+  Copy,
+  MapPin,
+  Link as LinkIcon,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
+
+// 登録済み自治体マスター（municipalities.json と同期）
+const MUNICIPALITIES: Record<string, { prefix: string; seedUrl: string; tel: string }> = {
+  '世田谷区': {
+    prefix: 'STG',
+    seedUrl: 'https://www.city.setagaya.lg.jp/fukushikenkou/koureikaigo/category/12486.html',
+    tel: '03-5432-2407',
+  },
+  '練馬区': {
+    prefix: 'NRM',
+    seedUrl: 'https://www.city.nerima.tokyo.jp/hokenfukushi/koreisha/',
+    tel: '03-3993-1111',
+  },
+  '新宿区': {
+    prefix: 'SJK',
+    seedUrl: 'https://www.city.shinjuku.lg.jp/fukushi/koresha/index.html',
+    tel: '03-5273-4512',
+  },
+  '渋谷区': {
+    prefix: 'SBY',
+    seedUrl: 'https://www.city.shibuya.tokyo.jp/fukushi/koresha/',
+    tel: '03-3463-1211',
+  },
+};
+
+/** 自治体別デモログを生成 */
+function buildDemoLogs(municipalityName: string, url: string, prefix: string): string[] {
+  return [
+    `⚡ [CRAWLER] Python収集パイプラインを起動中...`,
+    `📡 [FETCH] ${municipalityName} 高齢者向けサービスページに接続 (robots.txt 遵守)`,
+    `🔍 [DISCOVERY] ${url}`,
+    `🔗 [LINKS] サービス候補リンクを ${Math.floor(Math.random() * 8) + 8} 件検出`,
+    `📄 [PAGE 1/8] ページテキスト取得中... (interval=1.2s)`,
+    `🤖 [LLM] claude-sonnet-4-6 / Structured Output スキーマ適用中...`,
+    `📊 [PARSE] 抽出成功: {"name": "${municipalityName}配食サービス", "price": 500, "confidence": 0.96}`,
+    `📄 [PAGE 2/8] ページテキスト取得中...`,
+    `🤖 [LLM] claude-sonnet-4-6 / Structured Output スキーマ適用中...`,
+    `📊 [PARSE] 抽出成功: {"name": "${municipalityName}見守り訪問", "price": 0, "confidence": 0.94}`,
+    `💾 [SAVE] status="draft" として新規 ${Math.floor(Math.random() * 3) + 2} 件を extracted_drafts.json に追記`,
+    `✅ [COMPLETE] 収集完了。管理者の人手承認待ちリストに登録しました。`,
+    ``,
+    `  実行コマンド: python crawler/collect_services.py --municipality ${municipalityName}`,
+    `  出力ファイル: crawler/extracted_drafts.json`,
+  ];
+}
 
 interface AdminPipelineProps {
   services: Service[];
@@ -39,23 +87,43 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // AI収集スクリプトのシミュレーション実行（デモ用）
-  const handleRunCrawlerDemo = () => {
-    setIsCrawling(true);
-    setCrawlLogs([
-      '⚡ [CRAWLER] Python収集パイプラインを起動中...',
-      '📡 [FETCH] 練馬区オープンデータCSVおよび介護サービス情報公表システムに接続',
-      '🔍 [DISCOVERY] 対象事業所 137120XXXX の自社公式Webサイトを巡回中 (robots.txt遵守, interval=1.2s)',
-      '📄 [EXTRACT] 高齢者福祉のしおり PDF (P.24-28 生活支援施策) をテキスト抽出中...',
-      '🤖 [LLM] Claude 3.7 Sonnet / Structured Output スキーマ適用中...',
-      '📊 [PARSE] 抽出結果: {"service": "まごころ配食", "price": 500, "confidence": 0.98, "snippet": "1食あたり自己負担500円"}',
-      '💾 [DB] status="draft" として新規2件をステージングDBへ投入完了！',
-      '✅ [COMPLETE] 収集完了。管理者の人手承認待ちリストに登録しました。',
-    ]);
+  // 収集設定
+  const [useCustomUrl, setUseCustomUrl] = useState<boolean>(false);
+  const [selectedMunicipality, setSelectedMunicipality] = useState<string>('世田谷区');
+  const [customName, setCustomName] = useState<string>('');
+  const [customUrl, setCustomUrl] = useState<string>('');
+  const [customPrefix, setCustomPrefix] = useState<string>('XXX');
+  const [copied, setCopied] = useState<boolean>(false);
+  const logEndRef = useRef<HTMLDivElement>(null);
 
-    setTimeout(() => {
-      setIsCrawling(false);
-    }, 2500);
+  const activeName = useCustomUrl ? (customName || 'カスタム') : selectedMunicipality;
+  const activeCfg = MUNICIPALITIES[selectedMunicipality];
+  const activeUrl = useCustomUrl ? customUrl : activeCfg?.seedUrl ?? '';
+  const activePrefix = useCustomUrl ? customPrefix : activeCfg?.prefix ?? 'XXX';
+
+  const cliCommand = useCustomUrl
+    ? `python crawler/collect_services.py --url "${activeUrl}" --name ${activeName} --prefix ${activePrefix}`
+    : `python crawler/collect_services.py --municipality ${selectedMunicipality}`;
+
+  const handleCopyCommand = () => {
+    navigator.clipboard.writeText(cliCommand).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  // デモ実行（ログをステップごとに追加）
+  const handleRunCrawlerDemo = () => {
+    if (useCustomUrl && !customUrl) return;
+    setIsCrawling(true);
+    setCrawlLogs([]);
+    const logs = buildDemoLogs(activeName, activeUrl, activePrefix);
+    logs.forEach((line, i) => {
+      setTimeout(() => {
+        setCrawlLogs((prev) => [...prev, line]);
+        if (i === logs.length - 1) setIsCrawling(false);
+      }, i * 180);
+    });
   };
 
   const filteredServices = services.filter((s) => {
@@ -106,59 +174,160 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* 管理ヘッダー */}
-      <div className="glass p-6 sm:p-8 rounded-xl border border-stone-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2 text-orange-700 text-xs font-bold tracking-wide">
-            <Bot className="w-4 h-4" />
-            <span>AI収集パイプライン ＆ 人手承認コンソール</span>
+
+      {/* ── 収集パネル ── */}
+      <div className="glass rounded-xl border border-stone-200 overflow-hidden">
+        {/* ヘッダー */}
+        <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 text-orange-700 text-xs font-bold tracking-wide mb-0.5">
+              <Bot className="w-4 h-4" />
+              <span>AI収集パイプライン</span>
+            </div>
+            <h2 className="text-xl font-extrabold text-stone-900">自治体サービス データ収集</h2>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Playwright + Claude API でサービスページを自動巡回し、<strong>draft</strong> として登録します。
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold mt-1 tracking-tight">
-            自治体・民間自費サービス データ収集＆検証
-          </h2>
-          <p className="text-xs sm:text-sm text-stone-600 mt-1 max-w-2xl leading-relaxed">
-            オープンデータCSV、事業所公式サイト、自治体PDFからAIが自動収集・構造化。
-            推測による誤情報を防ぐため、<strong>管理者の人手承認（Approved）を得たレコードのみを一般公開</strong>します。
-          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleRunCrawlerDemo}
-          disabled={isCrawling}
-          className="flex items-center space-x-2 px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors disabled:opacity-50"
-        >
-          {isCrawling ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>自動収集中...</span>
-            </>
+        {/* 収集設定 */}
+        <div className="px-6 py-5 space-y-4">
+          {/* 登録済み / カスタム 切り替え */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setUseCustomUrl(false)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                !useCustomUrl ? 'bg-orange-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5 inline mr-1" />
+              登録済み自治体
+            </button>
+            <button
+              type="button"
+              onClick={() => setUseCustomUrl(true)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                useCustomUrl ? 'bg-orange-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+              }`}
+            >
+              <LinkIcon className="w-3.5 h-3.5 inline mr-1" />
+              URLを直接指定
+            </button>
+          </div>
+
+          {!useCustomUrl ? (
+            /* 登録済み自治体セレクター */
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(MUNICIPALITIES).map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setSelectedMunicipality(name)}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                    selectedMunicipality === name
+                      ? 'bg-orange-50 border-orange-400 text-orange-800'
+                      : 'bg-white border-stone-200 text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
           ) : (
-            <>
-              <Play className="w-4 h-4 fill-white" />
-              <span>収集スクリプトを実行</span>
-            </>
+            /* カスタムURL入力 */
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-1">
+                <label className="block text-[11px] text-stone-500 font-bold mb-1">自治体名</label>
+                <input
+                  type="text"
+                  placeholder="例: 杉並区"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs focus:outline-orange-500"
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <label className="block text-[11px] text-stone-500 font-bold mb-1">IDプレフィックス</label>
+                <input
+                  type="text"
+                  placeholder="例: SGN"
+                  value={customPrefix}
+                  onChange={(e) => setCustomPrefix(e.target.value.toUpperCase().slice(0, 5))}
+                  className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-mono focus:outline-orange-500"
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <label className="block text-[11px] text-stone-500 font-bold mb-1">収集開始URL</label>
+                <input
+                  type="url"
+                  placeholder="https://www.city.〇〇.lg.jp/..."
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs focus:outline-orange-500"
+                />
+              </div>
+            </div>
           )}
-        </button>
-      </div>
 
-      {/* 収集ログコンソール（デモ用） */}
-      {crawlLogs.length > 0 && (
-        <div className="bg-stone-950 p-5 rounded-lg border border-stone-800 font-mono text-xs text-emerald-400 space-y-1 shadow-inner overflow-hidden">
-          <div className="flex items-center justify-between text-stone-400 pb-2 border-b border-stone-800 mb-2">
-            <div className="flex items-center space-x-2">
-              <Terminal className="w-4 h-4 text-amber-400" />
-              <span className="font-bold text-stone-200">crawler/collect_services.py 実行ログ</span>
-            </div>
-            <span className="text-[11px] text-stone-500">Structured Output Engine</span>
+          {/* CLIコマンド表示 */}
+          <div className="bg-stone-950 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+            <code className="text-emerald-400 text-xs font-mono flex-1 min-w-0 truncate">
+              {cliCommand}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopyCommand}
+              title="コマンドをコピー"
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-[11px] font-bold transition-colors"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'コピー済み' : 'コピー'}
+            </button>
           </div>
-          {crawlLogs.map((log, idx) => (
-            <div key={idx} className="leading-relaxed">
-              {log}
-            </div>
-          ))}
+
+          {/* 実行ボタン */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleRunCrawlerDemo}
+              disabled={isCrawling || (useCustomUrl && !customUrl)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors disabled:opacity-40"
+            >
+              {isCrawling ? (
+                <><RefreshCw className="w-4 h-4 animate-spin" /><span>収集中...</span></>
+              ) : (
+                <><Play className="w-4 h-4 fill-white" /><span>デモ実行</span></>
+              )}
+            </button>
+            <p className="text-[11px] text-stone-400">
+              実際の収集はターミナルで上記コマンドを実行してください。
+            </p>
+          </div>
         </div>
-      )}
+
+        {/* 収集ログコンソール */}
+        {crawlLogs.length > 0 && (
+          <div className="border-t border-stone-100 bg-stone-950 px-5 py-4 font-mono text-xs text-emerald-400 space-y-0.5 max-h-64 overflow-y-auto">
+            <div className="flex items-center justify-between text-stone-400 pb-2 border-b border-stone-800 mb-2">
+              <div className="flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-amber-400" />
+                <span className="font-bold text-stone-200">
+                  collect_services.py — {activeName}
+                </span>
+              </div>
+              {isCrawling && <RefreshCw className="w-3 h-3 animate-spin text-stone-500" />}
+            </div>
+            {crawlLogs.map((log, idx) => (
+              <div key={idx} className="leading-relaxed whitespace-pre">
+                {log}
+              </div>
+            ))}
+            <div ref={logEndRef} />
+          </div>
+        )}
+      </div>
 
       {/* 統計バー */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
