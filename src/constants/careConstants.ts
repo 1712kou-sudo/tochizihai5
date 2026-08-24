@@ -509,5 +509,5 @@ export const DEMO_SAMPLE_INPUT: UserInputData = {
     'sun-night': 'night_safety',
   },
   monthlyBudget: 25000,
-  postalCode: '154-0004',
+  postalCode: '176-0001',
 };

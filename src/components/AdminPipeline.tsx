@@ -55,7 +55,7 @@ export const AdminPipeline: React.FC = () => {
     setIsCrawling(true);
     setCrawlLogs([
       '⚡ [CRAWLER] Python収集パイプラインを起動中...',
-      '📡 [FETCH] 世田谷区オープンデータCSVおよび介護サービス情報公表システムに接続',
+      '📡 [FETCH] 練馬区オープンデータCSVおよび介護サービス情報公表システムに接続',
       '🔍 [DISCOVERY] 対象事業所 137120XXXX の自社公式Webサイトを巡回中 (robots.txt遵守, interval=1.2s)',
       '📄 [EXTRACT] 高齢者福祉のしおり PDF (P.24-28 生活支援施策) をテキスト抽出中...',
       '🤖 [LLM] Claude 3.7 Sonnet / Structured Output スキーマ適用中...',

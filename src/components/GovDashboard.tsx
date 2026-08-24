@@ -87,13 +87,13 @@ const HEATMAP_GAP_MATRIX: Record<string, number> = {
   'sun-night': 88,
 };
 
-// 町丁目別サービス空白度データ（世田谷区エリアモデル）
+// 町丁目別サービス空白度データ（練馬区エリアモデル）
 const DISTRICT_BLANK_DATA = [
-  { district: '烏山・給田地域', elderlySingles: 4820, services: 18, ratio: '267世帯/所', level: 'high' },
-  { district: '砧・成城地域', elderlySingles: 5120, services: 24, ratio: '213世帯/所', level: 'high' },
-  { district: '北沢・代田地域', elderlySingles: 3950, services: 32, ratio: '123世帯/所', level: 'mid' },
-  { district: '玉川・用賀地域', elderlySingles: 4400, services: 38, ratio: '115世帯/所', level: 'mid' },
-  { district: '世田谷・経堂地域', elderlySingles: 6200, services: 58, ratio: '106世帯/所', level: 'low' },
+  { district: '光が丘地域', elderlySingles: 5100, services: 16, ratio: '318世帯/所', level: 'high' },
+  { district: '石神井・大泉地域', elderlySingles: 5430, services: 21, ratio: '258世帯/所', level: 'high' },
+  { district: '関町・中村・富士見台地域', elderlySingles: 4200, services: 29, ratio: '144世帯/所', level: 'mid' },
+  { district: '田柄・土支田地域', elderlySingles: 3870, services: 35, ratio: '110世帯/所', level: 'mid' },
+  { district: '練馬・豊玉地域', elderlySingles: 6300, services: 61, ratio: '103世帯/所', level: 'low' },
 ];
 
 export const GovDashboard: React.FC = () => {
@@ -417,7 +417,7 @@ export const GovDashboard: React.FC = () => {
               <span>町丁目・日常生活圏域別 サービス空白密度</span>
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
-              高齢単身世帯数に対する登録サービス提供事業者数の比率（世田谷区圏域モデル）
+              高齢単身世帯数に対する登録サービス提供事業者数の比率（練馬区圏域モデル）
             </p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 bg-stone-50 text-stone-800 rounded-full">
