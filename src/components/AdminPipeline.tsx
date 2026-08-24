@@ -53,6 +53,7 @@ const MUNICIPALITIES: Record<string, { prefix: string; seedUrl: string; tel: str
 // AI収集で取得したサービスの一時型（Service に変換する前）
 interface CollectedItem {
   id: string;           // フロントで採番
+  role: string | null;  // discovery_rules.json の role
   name: string;
   scheme: string;
   description: string;
@@ -62,6 +63,9 @@ interface CollectedItem {
   reduction_hours: number;
   application_route: string;
   confidence_score: number;
+  reference_date: string | null;  // 資料の基準日
+  stale_candidate: boolean;       // 18か月以上前なら true
+  source_official: boolean;       // .lg.jp なら true
   source_url: string;
   state: 'pending' | 'added' | 'skipped';
 }
@@ -184,8 +188,16 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
           const err = await resp.json() as { error: string };
           throw new Error(err.error);
         }
-        const { services } = await resp.json() as { services: Omit<CollectedItem, 'id' | 'source_url' | 'state'>[] };
-        services.forEach((s, idx) => {
+        const data = await resp.json() as {
+          services?: Omit<CollectedItem, 'id' | 'source_url' | 'state'>[];
+          skipped?: boolean;
+          reason?: string;
+        };
+        if (data.skipped) {
+          // 否定語ページはスキップ（正常）
+          continue;
+        }
+        (data.services ?? []).forEach((s, idx) => {
           allItems.push({
             ...s,
             id: `${activePrefix}-AI-${Date.now()}-${allItems.length + idx}`,
@@ -427,23 +439,44 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-sm text-stone-900">{item.name}</span>
+                      {item.role && (
+                        <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-mono shrink-0">
+                          {item.role}
+                        </span>
+                      )}
                       <span className="text-[11px] text-stone-400 font-mono shrink-0">
                         信頼度 {(item.confidence_score * 100).toFixed(0)}%
                       </span>
                       <span className="text-[11px] text-stone-400 shrink-0">
-                        {item.price === null ? '料金不明' : item.price === 0 ? '無料' : `${item.price.toLocaleString()}円`}
+                        {item.price === null ? '料金不明（Tier1 — 人レビュー後に確認）' : item.price === 0 ? '無料' : `${item.price.toLocaleString()}円`}
                       </span>
                     </div>
+                    {item.stale_candidate && (
+                      <div className="flex items-center gap-1 mt-0.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        基準日が18か月以上前 — 最新情報を要確認（{item.reference_date ?? '日付不明'}）
+                      </div>
+                    )}
+                    {!item.stale_candidate && item.reference_date && (
+                      <span className="text-[11px] text-stone-400 mt-0.5 block">基準日: {item.reference_date}</span>
+                    )}
                     <p className="text-[12px] text-stone-600 mt-0.5 line-clamp-2">{item.description}</p>
-                    <a
-                      href={item.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-orange-600 hover:underline flex items-center gap-0.5 mt-0.5"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      {item.source_url.split('/').slice(-2).join('/')}
-                    </a>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <a
+                        href={item.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-orange-600 hover:underline flex items-center gap-0.5"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {item.source_url.split('/').slice(-2).join('/')}
+                      </a>
+                      {!item.source_official && (
+                        <span className="text-[10px] text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">
+                          ⚠ lg.jp 外
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0">
                     {item.state === 'pending' ? (
