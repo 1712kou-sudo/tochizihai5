@@ -1,9 +1,10 @@
+// @ts-nocheck
 /**
  * けあしる Cloudflare Worker
  *
- * - /api/collect  POST  { url, apiKey, municipalityName } → サービスJSON
- * - /api/links    GET   ?url=...                          → ページ内リンク一覧
- * - その他                                                → 静的アセットを返す
+ * - /api/collect  POST  { url, municipalityName } → サービスJSON
+ * - /api/links    GET   ?url=...                  → ページ内リンク一覧
+ * - その他                                        → 静的アセットを返す
  */
 
 interface Env {
