@@ -8,6 +8,7 @@
 
 interface Env {
   ASSETS: Fetcher;
+  ANTHROPIC_API_KEY: string;
 }
 
 const CORS_HEADERS = {
@@ -98,14 +99,16 @@ export default {
 
     // ── POST /api/collect ──────────────────────────────────
     if (url.pathname === '/api/collect' && request.method === 'POST') {
-      let body: { url: string; apiKey: string; municipalityName?: string };
+      let body: { url: string; municipalityName?: string };
       try {
         body = await request.json() as typeof body;
       } catch {
         return jsonRes({ error: 'invalid JSON' }, 400);
       }
-      const { url: targetUrl, apiKey, municipalityName = '' } = body;
-      if (!targetUrl || !apiKey) return jsonRes({ error: 'url and apiKey required' }, 400);
+      const { url: targetUrl, municipalityName = '' } = body;
+      if (!targetUrl) return jsonRes({ error: 'url required' }, 400);
+      const apiKey = env.ANTHROPIC_API_KEY;
+      if (!apiKey) return jsonRes({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
 
       // 1. ページテキスト取得
       let pageText = '';

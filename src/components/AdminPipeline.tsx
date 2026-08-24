@@ -9,23 +9,20 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Service } from '@/types';
 import { SCHEME_LABELS } from '@/utils/colors';
 import {
-  Play,
   CheckCircle,
   XCircle,
   AlertTriangle,
   ExternalLink,
   Bot,
-  Terminal,
   RefreshCw,
   Search,
   Copy,
   MapPin,
   Link as LinkIcon,
-  ChevronDown,
   Check,
 } from 'lucide-react';
 
@@ -53,27 +50,6 @@ const MUNICIPALITIES: Record<string, { prefix: string; seedUrl: string; tel: str
   },
 };
 
-/** 自治体別デモログを生成 */
-function buildDemoLogs(municipalityName: string, url: string, prefix: string): string[] {
-  return [
-    `⚡ [CRAWLER] Python収集パイプラインを起動中...`,
-    `📡 [FETCH] ${municipalityName} 高齢者向けサービスページに接続 (robots.txt 遵守)`,
-    `🔍 [DISCOVERY] ${url}`,
-    `🔗 [LINKS] サービス候補リンクを ${Math.floor(Math.random() * 8) + 8} 件検出`,
-    `📄 [PAGE 1/8] ページテキスト取得中... (interval=1.2s)`,
-    `🤖 [LLM] claude-sonnet-4-6 / Structured Output スキーマ適用中...`,
-    `📊 [PARSE] 抽出成功: {"name": "${municipalityName}配食サービス", "price": 500, "confidence": 0.96}`,
-    `📄 [PAGE 2/8] ページテキスト取得中...`,
-    `🤖 [LLM] claude-sonnet-4-6 / Structured Output スキーマ適用中...`,
-    `📊 [PARSE] 抽出成功: {"name": "${municipalityName}見守り訪問", "price": 0, "confidence": 0.94}`,
-    `💾 [SAVE] status="draft" として新規 ${Math.floor(Math.random() * 3) + 2} 件を extracted_drafts.json に追記`,
-    `✅ [COMPLETE] 収集完了。管理者の人手承認待ちリストに登録しました。`,
-    ``,
-    `  実行コマンド: python crawler/collect_services.py --municipality ${municipalityName}`,
-    `  出力ファイル: crawler/extracted_drafts.json`,
-  ];
-}
-
 // AI収集で取得したサービスの一時型（Service に変換する前）
 interface CollectedItem {
   id: string;           // フロントで採番
@@ -99,8 +75,6 @@ interface AdminPipelineProps {
 
 export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdateStatus, onBulkUpdateStatus, onAddDraftServices }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [isCrawling, setIsCrawling] = useState<boolean>(false);
-  const [crawlLogs, setCrawlLogs] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -111,15 +85,8 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
   const [customUrl, setCustomUrl] = useState<string>('');
   const [customPrefix, setCustomPrefix] = useState<string>('XXX');
   const [copied, setCopied] = useState<boolean>(false);
-  const logEndRef = useRef<HTMLDivElement>(null);
 
-  // APIキー
-  const [apiKey, setApiKey] = useState<string>(() =>
-    typeof window !== 'undefined' ? (localStorage.getItem('keashiru_anthropic_key') ?? '') : ''
-  );
-  const [showApiKey, setShowApiKey] = useState<boolean>(false);
-
-  // 本番収集
+  // 収集
   const [isCollecting, setIsCollecting] = useState<boolean>(false);
   const [collectProgress, setCollectProgress] = useState<string>('');
   const [collectError, setCollectError] = useState<string>('');
@@ -133,11 +100,6 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
   const cliCommand = useCustomUrl
     ? `python crawler/collect_services.py --url "${activeUrl}" --name ${activeName} --prefix ${activePrefix}`
     : `python crawler/collect_services.py --municipality ${selectedMunicipality}`;
-
-  const saveApiKey = (key: string) => {
-    setApiKey(key);
-    if (typeof window !== 'undefined') localStorage.setItem('keashiru_anthropic_key', key);
-  };
 
   /** CollectedItem を Service 型に変換（デフォルト値で補完） */
   const toService = (item: CollectedItem, providerName: string): Service => ({
@@ -181,9 +143,9 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     );
   };
 
-  /** 本番収集：/api/collect を呼び出す */
-  const handleRealCollect = async () => {
-    if (!apiKey || !activeUrl) return;
+  /** データ収集：/api/collect を呼び出す */
+  const handleCollect = async () => {
+    if (!activeUrl) return;
     setIsCollecting(true);
     setCollectedItems([]);
     setCollectError('');
@@ -208,7 +170,7 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
         const resp = await fetch('/api/collect', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: u, apiKey, municipalityName: activeName }),
+          body: JSON.stringify({ url: u, municipalityName: activeName }),
         });
         if (!resp.ok) {
           const err = await resp.json() as { error: string };
@@ -237,20 +199,6 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     navigator.clipboard.writeText(cliCommand).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  // デモ実行（ログをステップごとに追加）
-  const handleRunCrawlerDemo = () => {
-    if (useCustomUrl && !customUrl) return;
-    setIsCrawling(true);
-    setCrawlLogs([]);
-    const logs = buildDemoLogs(activeName, activeUrl, activePrefix);
-    logs.forEach((line, i) => {
-      setTimeout(() => {
-        setCrawlLogs((prev) => [...prev, line]);
-        if (i === logs.length - 1) setIsCrawling(false);
-      }, i * 180);
     });
   };
 
@@ -415,80 +363,25 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
             </button>
           </div>
 
-          {/* APIキー入力 */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <label className="text-[11px] text-stone-500 font-bold shrink-0">Anthropic API Key</label>
-            <div className="relative flex-1 min-w-48 max-w-xs">
-              <input
-                type={showApiKey ? 'text' : 'password'}
-                placeholder="sk-ant-..."
-                value={apiKey}
-                onChange={(e) => saveApiKey(e.target.value)}
-                className="w-full px-3 py-1.5 pr-12 rounded-lg border border-stone-200 text-xs font-mono focus:outline-orange-500"
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-[11px] font-bold"
-              >
-                {showApiKey ? '隠す' : '表示'}
-              </button>
-            </div>
-            <span className="text-[11px] text-stone-400">ブラウザ内のみ保存・外部送信なし</span>
-          </div>
-
           {/* 実行ボタン */}
           <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
-              onClick={handleRunCrawlerDemo}
-              disabled={isCrawling || (useCustomUrl && !customUrl)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-stone-700 hover:bg-stone-800 text-white font-bold text-sm transition-colors disabled:opacity-40"
-            >
-              {isCrawling ? (
-                <><RefreshCw className="w-4 h-4 animate-spin" /><span>収集中...</span></>
-              ) : (
-                <><Play className="w-4 h-4 fill-white" /><span>デモ実行</span></>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleRealCollect}
-              disabled={isCollecting || !apiKey || (useCustomUrl && !customUrl)}
+              onClick={handleCollect}
+              disabled={isCollecting || (useCustomUrl && !customUrl)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors disabled:opacity-40"
             >
               {isCollecting ? (
                 <><RefreshCw className="w-4 h-4 animate-spin" /><span className="max-w-48 truncate">{collectProgress || '収集中...'}</span></>
               ) : (
-                <><Bot className="w-4 h-4" /><span>本番収集（Claude API使用）</span></>
+                <><Bot className="w-4 h-4" /><span>データ収集</span></>
               )}
             </button>
-            {!apiKey && (
-              <p className="text-[11px] text-amber-600">APIキーを入力すると本番収集が使えます。</p>
+            {collectProgress && !isCollecting && (
+              <span className="text-[12px] text-stone-500">{collectProgress}</span>
             )}
           </div>
         </div>
-
-        {/* 収集ログコンソール */}
-        {crawlLogs.length > 0 && (
-          <div className="border-t border-stone-100 bg-stone-950 px-5 py-4 font-mono text-xs text-emerald-400 space-y-0.5 max-h-64 overflow-y-auto">
-            <div className="flex items-center justify-between text-stone-400 pb-2 border-b border-stone-800 mb-2">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-amber-400" />
-                <span className="font-bold text-stone-200">
-                  collect_services.py — {activeName}
-                </span>
-              </div>
-              {isCrawling && <RefreshCw className="w-3 h-3 animate-spin text-stone-500" />}
-            </div>
-            {crawlLogs.map((log, idx) => (
-              <div key={idx} className="leading-relaxed whitespace-pre">
-                {log}
-              </div>
-            ))}
-            <div ref={logEndRef} />
-          </div>
-        )}
 
         {/* 収集結果（CollectedItems） */}
         {(collectedItems.length > 0 || collectError) && (
