@@ -1,0 +1,49 @@
+{
+  "世田谷区": {
+    "provider_id": "prov_setagaya_city",
+    "provider_name": "世田谷区 高齢福祉課",
+    "address": "東京都世田谷区世田谷4-21-27",
+    "tel": "03-5432-2407",
+    "url": "https://www.city.setagaya.lg.jp/fukushikenkou/koureikaigo/category/12486.html",
+    "seed_urls": [
+      "https://www.city.setagaya.lg.jp/fukushikenkou/koureikaigo/category/12485.html",
+      "https://www.city.setagaya.lg.jp/fukushikenkou/koureikaigo/category/12486.html",
+      "https://www.city.setagaya.lg.jp/fukushikenkou/koureikaigo/category/12488.html"
+    ],
+    "id_prefix": "STG"
+  },
+  "練馬区": {
+    "provider_id": "prov_nerima_city",
+    "provider_name": "練馬区 高齢者支援課",
+    "address": "東京都練馬区豊玉北6-12-1",
+    "tel": "03-3993-1111",
+    "url": "https://www.city.nerima.tokyo.jp/hokenfukushi/koreisha/",
+    "seed_urls": [
+      "https://www.city.nerima.tokyo.jp/hokenfukushi/koreisha/hitori/zaitakuseikatusien.html",
+      "https://www.city.nerima.tokyo.jp/hokenfukushi/koreisha/service/index.html"
+    ],
+    "id_prefix": "NRM"
+  },
+  "新宿区": {
+    "provider_id": "prov_shinjuku_city",
+    "provider_name": "新宿区 高齢者支援課",
+    "address": "東京都新宿区新宿1-4-1",
+    "tel": "03-5273-4512",
+    "url": "https://www.city.shinjuku.lg.jp/fukushi/index.html",
+    "seed_urls": [
+      "https://www.city.shinjuku.lg.jp/fukushi/koresha/index.html"
+    ],
+    "id_prefix": "SJK"
+  },
+  "渋谷区": {
+    "provider_id": "prov_shibuya_city",
+    "provider_name": "渋谷区 高齢者福祉課",
+    "address": "東京都渋谷区宇田川町1-1",
+    "tel": "03-3463-1211",
+    "url": "https://www.city.shibuya.tokyo.jp/fukushi/koresha/",
+    "seed_urls": [
+      "https://www.city.shibuya.tokyo.jp/fukushi/koresha/service/"
+    ],
+    "id_prefix": "SBY"
+  }
+}
