@@ -162,7 +162,7 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
       const linksResp = await fetch(`/api/links?url=${encodeURIComponent(activeUrl)}`);
       if (linksResp.ok) {
         const { links } = await linksResp.json() as { links: string[] };
-        if (links.length > 0) urls = [activeUrl, ...links.slice(0, 4)];
+        if (links.length > 0) urls = [activeUrl, ...links.slice(0, 9)];
       }
     } catch { /* fallback to seed url */ }
 

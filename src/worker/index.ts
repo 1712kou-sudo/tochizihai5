@@ -124,6 +124,16 @@ const NAV_SKIP_TEXTS = [
   'English', '中文', '한국어', 'Deutsch', 'Français', 'Español', 'Português',
   '本文へスキップ', 'ページID', '旧ページID', 'お問い合わせ', 'アクセス',
   '窓口', 'サイト内検索', '検索', 'メニュー', '閉じる',
+  '外国人住民', '議会', '観光', 'まちづくり', '都市計画', '教育', '子ども',
+  '産業', '税金', '保険・年金', 'ごみ', 'リサイクル', '防災', '救急・防犯',
+  'ペット', '人権', '消費生活', '選挙',
+];
+
+// 高優先度キーワード（サービスページを識別するための語彙）
+const SERVICE_PRIORITY_TERMS = [
+  '高齢', '介護', '福祉', '支援', '給付', '補助', '助成', '通報', '見守り',
+  '配食', '会食', '訪問', '入浴', '緊急', '救急', '地域包括', '総合事業',
+  'サービス', '申請', '利用', 'ひとりぐらし', '在宅',
 ];
 
 /**
@@ -163,7 +173,12 @@ function extractLinks(html: string, baseUrl: string): string[] {
       if (hasNegativeTerm(anchorText) || hasNegativeTerm(href)) continue;
 
       seen.add(abs);
-      results.push(abs);
+      // サービス関連語彙を含むリンクを優先（先頭に積む）
+      if (SERVICE_PRIORITY_TERMS.some((t) => anchorText.includes(t))) {
+        results.unshift(abs);
+      } else {
+        results.push(abs);
+      }
     } catch { /* ignore */ }
   }
   return results.slice(0, 20);
