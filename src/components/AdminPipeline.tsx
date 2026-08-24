@@ -143,6 +143,14 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     );
   };
 
+  /** pending の全件をまとめてDraft追加 */
+  const handleApproveAll = () => {
+    const pending = collectedItems.filter((i) => i.state === 'pending');
+    if (pending.length === 0) return;
+    onAddDraftServices(pending.map((i) => toService(i, activeName)));
+    setCollectedItems((prev) => prev.map((i) => i.state === 'pending' ? { ...i, state: 'added' } : i));
+  };
+
   /** データ収集：/api/collect を呼び出す */
   const handleCollect = async () => {
     if (!activeUrl) return;
@@ -390,9 +398,21 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
               <h3 className="text-sm font-bold text-stone-800">
                 収集結果 — {collectedItems.length} 件（承認するとDraftとして登録されます）
               </h3>
-              {collectError && (
-                <p className="text-[11px] text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg">{collectError}</p>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {collectError && (
+                  <p className="text-[11px] text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg">{collectError}</p>
+                )}
+                {collectedItems.some((i) => i.state === 'pending') && (
+                  <button
+                    type="button"
+                    onClick={handleApproveAll}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    すべてDraft追加（{collectedItems.filter((i) => i.state === 'pending').length}件）
+                  </button>
+                )}
+              </div>
             </div>
             <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
               {collectedItems.map((item) => (
