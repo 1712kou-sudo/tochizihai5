@@ -122,6 +122,20 @@ export default function HomePage() {
     });
   };
 
+  // 一括ステータス更新（AdminPipelineから呼ばれる）
+  const handleBulkUpdateStatus = (ids: string[], newStatus: 'approved' | 'rejected' | 'draft') => {
+    const idSet = new Set(ids);
+    setServices((prev) => {
+      const updated = prev.map((s) =>
+        idSet.has(s.id)
+          ? { ...s, status: newStatus, verifiedAt: new Date().toISOString().split('T')[0], verifiedBy: '管理者（人手確認）' }
+          : s
+      );
+      setCurrentSlots(buildOptimizedSlots(userInput, monthlyBudget, updated));
+      return updated;
+    });
+  };
+
   // スロットの手動サービス変更
   const handleSelectServiceForSlot = (service: Service | null) => {
     if (!activeSlot) return;
@@ -355,7 +369,11 @@ export default function HomePage() {
 
           {/* タブ3: AI収集＆承認管理 */}
           {activeTab === 'admin' && (
-            <AdminPipeline services={services} onUpdateStatus={handleUpdateServiceStatus} />
+            <AdminPipeline
+              services={services}
+              onUpdateStatus={handleUpdateServiceStatus}
+              onBulkUpdateStatus={handleBulkUpdateStatus}
+            />
           )}
         </div>
       </main>

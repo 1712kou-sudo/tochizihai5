@@ -29,13 +29,15 @@ import {
 interface AdminPipelineProps {
   services: Service[];
   onUpdateStatus: (id: string, newStatus: 'approved' | 'rejected' | 'draft') => void;
+  onBulkUpdateStatus: (ids: string[], newStatus: 'approved' | 'rejected' | 'draft') => void;
 }
 
-export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdateStatus }) => {
+export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdateStatus, onBulkUpdateStatus }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isCrawling, setIsCrawling] = useState<boolean>(false);
   const [crawlLogs, setCrawlLogs] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // AI収集スクリプトのシミュレーション実行（デモ用）
   const handleRunCrawlerDemo = () => {
@@ -67,6 +69,40 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     }
     return true;
   });
+
+  const filteredIds = filteredServices.map((s) => s.id);
+  const allFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+  const someFilteredSelected = filteredIds.some((id) => selectedIds.has(id));
+
+  const handleToggleAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filteredIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filteredIds.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+  };
+
+  const handleToggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkAction = (newStatus: 'approved' | 'rejected' | 'draft') => {
+    onBulkUpdateStatus(Array.from(selectedIds), newStatus);
+    setSelectedIds(new Set());
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
@@ -191,12 +227,56 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
         </div>
       </div>
 
+      {/* 一括操作バー（選択中のみ表示） */}
+      {selectedIds.size > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <span className="text-sm font-bold text-orange-800">
+            {selectedIds.size} 件を選択中
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleBulkAction('approved')}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              まとめて承認・公開
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkAction('rejected')}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              まとめて却下
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="px-3 py-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-700 text-xs font-medium transition-colors"
+            >
+              選択解除
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* サービス一覧テーブル */}
       <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-stone-50 text-stone-700 border-b border-stone-200">
               <tr>
+                <th className="p-3.5 w-8">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    ref={(el) => { if (el) el.indeterminate = someFilteredSelected && !allFilteredSelected; }}
+                    onChange={handleToggleAll}
+                    className="w-3.5 h-3.5 rounded accent-orange-600 cursor-pointer"
+                    title="表示中を全選択"
+                  />
+                </th>
                 <th className="p-3.5 font-bold">ステータス</th>
                 <th className="p-3.5 font-bold">サービス名 / 提供事業者</th>
                 <th className="p-3.5 font-bold">区分</th>
@@ -209,8 +289,22 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
             <tbody className="divide-y divide-stone-100">
               {filteredServices.slice(0, 30).map((srv) => {
                 const schemeInfo = SCHEME_LABELS[srv.scheme];
+                const isSelected = selectedIds.has(srv.id);
                 return (
-                  <tr key={srv.id} className="hover:bg-stone-50/80 transition-colors">
+                  <tr
+                    key={srv.id}
+                    className={`transition-colors ${isSelected ? 'bg-orange-50' : 'hover:bg-stone-50/80'}`}
+                  >
+                    {/* チェックボックス */}
+                    <td className="p-3.5">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleOne(srv.id)}
+                        className="w-3.5 h-3.5 rounded accent-orange-600 cursor-pointer"
+                      />
+                    </td>
+
                     {/* ステータス */}
                     <td className="p-3.5 whitespace-nowrap">
                       {srv.status === 'approved' && (
