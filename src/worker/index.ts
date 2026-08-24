@@ -106,6 +106,18 @@ function hasNegativeTerm(text: string): boolean {
 }
 
 /**
+ * 公式ドメイン判定（discovery_rules.json DOM-1）。
+ * - `.lg.jp` は全国共通で公式
+ * - `.tokyo.jp` は東京23区（city.XXX.tokyo.jp）の例外
+ */
+function isOfficialDomain(hostname: string): boolean {
+  if (hostname.endsWith('.lg.jp')) return true;
+  // 東京23区: city.<区名>.tokyo.jp
+  if (/^(?:www\.)?city\.[a-z0-9-]+\.tokyo\.jp$/.test(hostname)) return true;
+  return false;
+}
+
+/**
  * ページ内の同ドメインリンクを収集。
  * - 同一オリジンのみ（discovery_rules.json: lg.jp 外は除外対象）
  * - ROLE_SEARCH_TERMS のいずれかを含むリンクのみ
@@ -194,11 +206,11 @@ export default {
       const targetUrl = url.searchParams.get('url');
       if (!targetUrl) return jsonRes({ error: 'url required' }, 400);
 
-      // .lg.jp ドメインのみ探索対象（discovery_rules.json DOM-1）
+      // 公式ドメインのみ探索対象（discovery_rules.json DOM-1）
       try {
         const parsed = new URL(targetUrl);
-        if (!parsed.hostname.endsWith('.lg.jp')) {
-          return jsonRes({ error: 'Only .lg.jp domains are supported', links: [] });
+        if (!isOfficialDomain(parsed.hostname)) {
+          return jsonRes({ error: 'Only official municipality domains (.lg.jp or Tokyo-23-ward .tokyo.jp) are supported', links: [] });
         }
       } catch {
         return jsonRes({ error: 'invalid url' }, 400);
@@ -232,11 +244,11 @@ export default {
         const { url: targetUrl, municipalityName = '' } = body;
         if (!targetUrl) return jsonRes({ error: 'url required' }, 400);
 
-        // .lg.jp ドメインのみ（discovery_rules.json DOM-1）
+        // 公式ドメインのみ（discovery_rules.json DOM-1、東京23区は.tokyo.jpも許可）
         try {
           const parsed = new URL(targetUrl);
-          if (!parsed.hostname.endsWith('.lg.jp')) {
-            return jsonRes({ error: 'Only .lg.jp domains are supported. Please use the official municipality domain.' }, 400);
+          if (!isOfficialDomain(parsed.hostname)) {
+            return jsonRes({ error: 'Only official municipality domains (.lg.jp or Tokyo-23-ward .tokyo.jp) are supported.' }, 400);
           }
         } catch {
           return jsonRes({ error: 'invalid url' }, 400);
