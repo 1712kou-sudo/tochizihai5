@@ -7,7 +7,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { RESTRICTION_RULES } from '@/constants/careConstants';
 import { CareLevel, HouseholdType } from '@/types';
 import { ChevronDown, HelpCircle, AlertCircle, Info, CheckCircle2, XCircle } from 'lucide-react';
@@ -24,13 +24,19 @@ export const RestrictionGuide: React.FC<RestrictionGuideProps> = ({
   careLevel,
 }) => {
   // 選択された困りごとに関連する境界ルールを抽出
+  const [isOpen, setIsOpen] = useState(false);
+
   const activeRules = RESTRICTION_RULES.filter((rule) =>
     selectedNeedIds.includes(rule.needsTagId)
   );
 
   return (
-    <details className="bg-white rounded-xl border border-stone-200 group">
-      <summary className="px-4 sm:px-5 py-3.5 flex items-center gap-2.5 cursor-pointer list-none select-none hover:bg-stone-50 rounded-xl transition-colors">
+    <div className="glass rounded-xl border border-stone-200">
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-expanded={isOpen}
+        className="w-full px-4 sm:px-5 py-3.5 flex items-center gap-2.5 cursor-pointer select-none hover:bg-stone-50 rounded-xl transition-colors text-left">
         <HelpCircle className="w-4 h-4 text-stone-400 shrink-0" />
         <span className="text-sm font-bold text-stone-900 flex-1 min-w-0">
           保険でできること／自費になること
@@ -38,9 +44,15 @@ export const RestrictionGuide: React.FC<RestrictionGuideProps> = ({
         <span className="text-xs text-stone-400 shrink-0 tabular-nums">
           {activeRules.length} 件
         </span>
-        <ChevronDown className="w-4 h-4 text-stone-400 shrink-0 transition-transform group-open:rotate-180" />
-      </summary>
+        <ChevronDown
+          className={`w-4 h-4 text-stone-400 shrink-0 transition-transform duration-300 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
 
+      <div className="collapse" data-open={isOpen ? 'true' : 'false'}>
+        <div>
       <div className="px-4 sm:px-5 pb-5 pt-1 space-y-4 border-t border-stone-100">
         <p className="text-xs text-stone-500">
           ケアマネジャーや自治体への相談時に役立つ「保険適用の可否」と「自費サービスの活用ポイント」です。
@@ -70,7 +82,7 @@ export const RestrictionGuide: React.FC<RestrictionGuideProps> = ({
               <div className="flex items-start justify-between gap-2">
                 <div className="font-bold text-xs text-stone-900">{rule.title}</div>
                 <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                     rule.isCovered === 'covered'
                       ? 'bg-emerald-100 text-emerald-800'
                       : rule.isCovered === 'conditional'
@@ -88,11 +100,11 @@ export const RestrictionGuide: React.FC<RestrictionGuideProps> = ({
                 {rule.conditionText}
               </p>
 
-              <div className="text-[11px] text-stone-500 bg-white p-2.5 rounded-xl border border-stone-100 leading-relaxed">
+              <div className="text-[11px] text-stone-500 glass p-2.5 rounded-xl border border-stone-100 leading-relaxed">
                 💡 {rule.explanation}
               </div>
 
-              <div className="text-[9px] text-stone-400 font-mono">
+              <div className="text-[11px] text-stone-400 font-mono">
                 根拠: {rule.officialSource}
               </div>
             </div>
@@ -104,6 +116,8 @@ export const RestrictionGuide: React.FC<RestrictionGuideProps> = ({
         ※ 実際のサービス利用可否や給付算定については、市区町村の地域包括支援センターまたは担当ケアマネジャーにご確認ください。
       </div>
       </div>
-    </details>
+        </div>
+      </div>
+    </div>
   );
 };

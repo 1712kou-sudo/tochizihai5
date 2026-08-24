@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useReveal } from '@/hooks/useReveal';
 import { Service, TimelineSlot } from '@/types';
 import { SCHEME_LABELS } from '@/utils/colors';
 import { ExternalLink } from 'lucide-react';
@@ -25,6 +26,7 @@ interface PlanRow {
 }
 
 export const ServicePlanList: React.FC<ServicePlanListProps> = ({ slots, onSelectSlot }) => {
+  const list = useReveal<HTMLUListElement>();
   const rows = useMemo<PlanRow[]>(() => {
     const map = new Map<string, PlanRow>();
     for (const slot of slots) {
@@ -50,14 +52,14 @@ export const ServicePlanList: React.FC<ServicePlanListProps> = ({ slots, onSelec
 
   if (rows.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-stone-200 p-6 text-center text-sm text-stone-500">
+      <div className="glass rounded-xl border border-stone-200 p-6 text-center text-sm text-stone-500">
         まだサービスが割り当てられていません。予算を上げるか、マス目から個別に選んでください。
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+    <div className="glass rounded-xl border border-stone-200 overflow-hidden">
       <div className="px-4 sm:px-5 py-3 border-b border-stone-200 flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-bold text-stone-900">
           このプランで使うサービス
@@ -71,20 +73,28 @@ export const ServicePlanList: React.FC<ServicePlanListProps> = ({ slots, onSelec
         </span>
       </div>
 
-      <ul className="divide-y divide-stone-100">
-        {rows.map((row) => {
+      <ul
+        {...list.containerProps}
+        className={`divide-y divide-stone-100 ${list.containerProps.className ?? ''}`}
+      >
+        {rows.map((row, i) => {
           const scheme = SCHEME_LABELS[row.service.scheme];
           return (
-            <li key={row.service.id}>
+            <li
+              key={row.service.id}
+              {...list.item(i)}
+              style={{ ...list.item(i).style, ['--rv-y' as string]: '8px', ['--rv-step' as string]: 'var(--stag-base)', ['--rv-dur' as string]: 'var(--dur-base)' }}
+              className={list.item(i).className}
+            >
               <button
                 type="button"
                 onClick={() => onSelectSlot(row.firstSlot)}
-                className="w-full text-left px-4 sm:px-5 py-3.5 hover:bg-stone-50 transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
+                className="press w-full text-left px-4 sm:px-5 py-3.5 hover:bg-stone-50 transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${scheme.badgeColor}`}
+                      className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${scheme.badgeColor}`}
                     >
                       {scheme.label}
                     </span>
@@ -99,13 +109,13 @@ export const ServicePlanList: React.FC<ServicePlanListProps> = ({ slots, onSelec
 
                 <div className="flex items-center gap-4 sm:gap-6 shrink-0">
                   <div className="text-right">
-                    <div className="text-[10px] text-stone-500">週の回数</div>
+                    <div className="text-[11px] text-stone-500">週の回数</div>
                     <div className="text-sm font-bold text-stone-900 tabular-nums">
                       {row.timesPerWeek} 回
                     </div>
                   </div>
                   <div className="text-right min-w-[76px]">
-                    <div className="text-[10px] text-stone-500">月あたり</div>
+                    <div className="text-[11px] text-stone-500">月あたり</div>
                     <div className="text-sm font-bold text-stone-900 tabular-nums">
                       {row.monthlyCost > 0 ? `¥${Math.round(row.monthlyCost).toLocaleString()}` : '無料'}
                     </div>

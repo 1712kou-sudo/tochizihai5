@@ -22,12 +22,21 @@ export function useCountUp(
   duration: number = 350,
   decimals: number = 0
 ): number {
+  // 動きを減らす設定は初回に一度だけ判定し、以降アニメーションを一切走らせない
+  const [prefersReduced] = useState<boolean>(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   const [displayValue, setDisplayValue] = useState<number>(targetValue);
   const startValueRef = useRef<number>(targetValue);
   const startTimeRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // 動きを減らす設定なら、そもそもアニメーションを開始しない
+    if (prefersReduced) return;
+
     // 目標値が変わったときにアニメーションを開始
     startValueRef.current = displayValue;
     startTimeRef.current = null;
@@ -65,7 +74,8 @@ export function useCountUp(
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [targetValue, duration, decimals]);
+  }, [targetValue, duration, decimals, prefersReduced]);
 
-  return displayValue;
+  // 動きを減らす設定では、確定値をそのまま返す
+  return prefersReduced ? targetValue : displayValue;
 }

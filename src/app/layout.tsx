@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,8 +25,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900">
+    <html lang="ja" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        {/*
+          描画前にテーマを確定させ、リロード時の白/黒のちらつきを防ぐ。
+          React が動くより前に実行する必要があるため、インラインで置いている。
+        */}
+        <Script
+          id="keashiru-theme"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{
+  var c = localStorage.getItem('keashiru-theme') || 'system';
+  var dark = c === 'dark' || (c === 'system' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches);
+  var r = document.documentElement;
+  r.setAttribute('data-theme', dark ? 'dark' : 'light');
+  r.dataset.themeChoice = c;
+}catch(e){}})();`,
+          }}
+        />
+      </head>
+      {/* 背景と文字色は globals.css のトークンが決める（テーマ切替のため） */}
+      <body className="min-h-full flex flex-col">
         {children}
       </body>
     </html>
