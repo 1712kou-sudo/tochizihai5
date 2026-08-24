@@ -185,8 +185,12 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
           body: JSON.stringify({ url: u, municipalityName: activeName }),
         });
         if (!resp.ok) {
-          const err = await resp.json() as { error: string };
-          throw new Error(err.error);
+          let errMsg = `HTTP ${resp.status}`;
+          try {
+            const err = await resp.json() as { error: string };
+            if (err.error) errMsg = err.error;
+          } catch { /* response was not JSON (e.g. Cloudflare HTML error page) */ }
+          throw new Error(errMsg);
         }
         const data = await resp.json() as {
           services?: Omit<CollectedItem, 'id' | 'source_url' | 'state'>[];

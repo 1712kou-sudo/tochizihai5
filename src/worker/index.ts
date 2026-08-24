@@ -221,39 +221,40 @@ export default {
 
     // ── POST /api/collect ──────────────────────────────────
     if (url.pathname === '/api/collect' && request.method === 'POST') {
-      let body: { url: string; municipalityName?: string };
+      // 全体を try-catch で囲み、未捕捉例外によるHTML返却を防ぐ
       try {
-        body = await request.json() as typeof body;
-      } catch {
-        return jsonRes({ error: 'invalid JSON' }, 400);
-      }
-      const { url: targetUrl, municipalityName = '' } = body;
-      if (!targetUrl) return jsonRes({ error: 'url required' }, 400);
-
-      // .lg.jp ドメインのみ（discovery_rules.json DOM-1）
-      try {
-        const parsed = new URL(targetUrl);
-        if (!parsed.hostname.endsWith('.lg.jp')) {
-          return jsonRes({ error: 'Only .lg.jp domains are supported. Please use the official municipality domain.' }, 400);
+        let body: { url: string; municipalityName?: string };
+        try {
+          body = await request.json() as typeof body;
+        } catch {
+          return jsonRes({ error: 'invalid JSON' }, 400);
         }
-      } catch {
-        return jsonRes({ error: 'invalid url' }, 400);
-      }
+        const { url: targetUrl, municipalityName = '' } = body;
+        if (!targetUrl) return jsonRes({ error: 'url required' }, 400);
 
-      const apiKey = env.ANTHROPIC_API_KEY;
-      if (!apiKey) return jsonRes({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
+        // .lg.jp ドメインのみ（discovery_rules.json DOM-1）
+        try {
+          const parsed = new URL(targetUrl);
+          if (!parsed.hostname.endsWith('.lg.jp')) {
+            return jsonRes({ error: 'Only .lg.jp domains are supported. Please use the official municipality domain.' }, 400);
+          }
+        } catch {
+          return jsonRes({ error: 'invalid url' }, 400);
+        }
 
-      // 1. ページテキスト取得
-      let pageText = '';
-      let pageTitle = '';
-      try {
-        const resp = await fetch(targetUrl, {
+        const apiKey = env.ANTHROPIC_API_KEY;
+        if (!apiKey) return jsonRes({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
+
+        // 1. ページテキスト取得
+        let pageText = '';
+        let pageTitle = '';
+        const pageResp = await fetch(targetUrl, {
           headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'ja,en;q=0.9' },
         });
-        if (!resp.ok) {
-          return jsonRes({ error: `fetch failed: HTTP ${resp.status}` }, 500);
+        if (!pageResp.ok) {
+          return jsonRes({ error: `fetch failed: HTTP ${pageResp.status}` }, 500);
         }
-        const html = await resp.text();
+        const html = await pageResp.text();
 
         // タイトル抽出
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -269,66 +270,72 @@ export default {
         }
 
         pageText = extractText(html);
-      } catch (e) {
-        return jsonRes({ error: `fetch failed: ${e}` }, 500);
-      }
 
-      // 否定語チェック（本文テキストレベル）
-      if (hasNegativeTerm(pageText.slice(0, 500))) {
-        return jsonRes({
-          services: [],
-          skipped: true,
-          reason: '否定語（議事録・入札等）を含むページはスキップしました',
+        // 否定語チェック（本文テキストレベル）
+        if (hasNegativeTerm(pageText.slice(0, 500))) {
+          return jsonRes({
+            services: [],
+            skipped: true,
+            reason: '否定語（議事録・入札等）を含むページはスキップしました',
+          });
+        }
+
+        // 2. Claude API で構造化抽出
+        const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 2048,
+            messages: [{
+              role: 'user',
+              content: `${EXTRACT_PROMPT}\n\n---\nURL: ${targetUrl}\n自治体: ${municipalityName}\nページタイトル: ${pageTitle}\n\n${pageText}`,
+            }],
+          }),
         });
-      }
 
-      // 2. Claude API で構造化抽出
-      const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 2048,
-          messages: [{
-            role: 'user',
-            content: `${EXTRACT_PROMPT}\n\n---\nURL: ${targetUrl}\n自治体: ${municipalityName}\nページタイトル: ${pageTitle}\n\n${pageText}`,
-          }],
-        }),
-      });
+        if (!claudeResp.ok) {
+          // Anthropic がHTML等を返す場合もあるので text() で受けてからJSONを試みる
+          const errText = await claudeResp.text();
+          let errMsg = `Claude ${claudeResp.status}`;
+          try {
+            const errJson = JSON.parse(errText) as { error?: { message: string } };
+            errMsg = errJson.error?.message ?? errMsg;
+          } catch { /* not JSON */ }
+          return jsonRes({ error: errMsg }, claudeResp.status);
+        }
 
-      if (!claudeResp.ok) {
-        const err = await claudeResp.json() as { error?: { message: string } };
-        return jsonRes({ error: err.error?.message ?? `Claude ${claudeResp.status}` }, claudeResp.status);
-      }
+        const claudeData = await claudeResp.json() as { content: { text: string }[] };
+        let raw = claudeData.content[0].text.trim();
 
-      const claudeData = await claudeResp.json() as { content: { text: string }[] };
-      let raw = claudeData.content[0].text.trim();
+        // ```json ... ``` ブロックを除去
+        const fence = raw.indexOf('```');
+        if (fence !== -1) {
+          raw = raw.slice(fence + 3);
+          if (raw.startsWith('json')) raw = raw.slice(4);
+          const end = raw.indexOf('```');
+          if (end !== -1) raw = raw.slice(0, end);
+        }
 
-      // ```json ... ``` ブロックを除去
-      const fence = raw.indexOf('```');
-      if (fence !== -1) {
-        raw = raw.slice(fence + 3);
-        if (raw.startsWith('json')) raw = raw.slice(4);
-        const end = raw.indexOf('```');
-        if (end !== -1) raw = raw.slice(0, end);
-      }
-
-      try {
-        const services = JSON.parse(raw.trim());
-        // verdict は自動で採用にしない（discovery_rules D5-PRF-4）
-        // price は Tier 1 のため null 強制（要件書 Tier 1 制約）
-        const sanitized = (Array.isArray(services) ? services : []).map((s: any) => ({
-          ...s,
-          verdict: '未評価',   // 自動で採用にしない
-          tier: 1,             // Tier 1 マーク（人のレビュー必須）
-        }));
-        return jsonRes({ services: sanitized });
-      } catch {
-        return jsonRes({ error: 'parse error', raw }, 500);
+        try {
+          const services = JSON.parse(raw.trim());
+          // verdict は自動で採用にしない（discovery_rules D5-PRF-4）
+          const sanitized = (Array.isArray(services) ? services : []).map((s: any) => ({
+            ...s,
+            verdict: '未評価',
+            tier: 1,
+          }));
+          return jsonRes({ services: sanitized });
+        } catch {
+          return jsonRes({ error: 'parse error', raw }, 500);
+        }
+      } catch (e) {
+        // 未捕捉例外をJSONで返す（Cloudflare HTMLエラーページを防ぐ）
+        return jsonRes({ error: `internal error: ${String(e)}` }, 500);
       }
     }
 
