@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "next build && npx wrangler versions upload"
+    "deploy": "next build && npx wrangler versions upload --assets=.next-cf"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
