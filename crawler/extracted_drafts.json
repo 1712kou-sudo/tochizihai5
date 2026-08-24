@@ -5,10 +5,7 @@
     "name": "世田谷区 高齢者福祉のしおり（AI自動抽出ドラフト）",
     "scheme": "private_paid",
     "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
-    "needs_tag_ids": [
-      "cleaning",
-      "cooking"
-    ],
+    "needs_tag_ids": ["cleaning", "cooking"],
     "price": 2500,
     "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
     "reduction_hours": 1.5,
@@ -27,10 +24,7 @@
     "name": "世田谷区シルバー人材センター 家事援助・除草案内（AI自動抽出ドラフト）",
     "scheme": "private_paid",
     "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
-    "needs_tag_ids": [
-      "cleaning",
-      "cooking"
-    ],
+    "needs_tag_ids": ["cleaning", "cooking"],
     "price": 2500,
     "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
     "reduction_hours": 1.5,
@@ -49,10 +43,7 @@
     "name": "SOMPOケア 訪問介護・自費サービス案内（AI自動抽出ドラフト）",
     "scheme": "private_paid",
     "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
-    "needs_tag_ids": [
-      "cleaning",
-      "cooking"
-    ],
+    "needs_tag_ids": ["cleaning", "cooking"],
     "price": 2500,
     "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
     "reduction_hours": 1.5,
@@ -71,10 +62,7 @@
     "name": "ベアーズ シニアサポート東京（AI自動抽出ドラフト）",
     "scheme": "private_paid",
     "description": "公表データおよび公式Webサイトから抽出された生活支援自費サービス。",
-    "needs_tag_ids": [
-      "cleaning",
-      "cooking"
-    ],
+    "needs_tag_ids": ["cleaning", "cooking"],
     "price": 2500,
     "price_source_snippet": "1時間あたり2,500円（税込・交通費別）",
     "reduction_hours": 1.5,
@@ -86,5 +74,62 @@
     "verified_by": null,
     "status": "draft",
     "confidence_score": 0.94
+  },
+  {
+    "id": "STG-001",
+    "provider_name": "世田谷区（地域ボランティア団体）",
+    "name": "会食サービス",
+    "scheme": "municipal_extra",
+    "description": "地域のボランティアが作る食事を地区会館等で提供。月1回〜週1回実施。外出機会・地域交流の場を確保。65歳以上でひとりぐらしの方等が対象。",
+    "needs_tag_ids": ["cooking", "talking_partner"],
+    "price": 400,
+    "price_source_snippet": "1食400円〜（協力団体等により異なります。）",
+    "reduction_hours": 1.5,
+    "application_route": "あんしんすこやかセンター / 総合支所保健福祉課 / 高齢福祉課 03-5432-2407",
+    "source_url": "https://www.city.setagaya.lg.jp/02082/2402.html",
+    "source_type": "自治体公式サービスページ",
+    "extracted_at": "2026-08-24T17:39:00.000Z",
+    "verified_at": null,
+    "verified_by": null,
+    "status": "draft",
+    "confidence_score": 0.97
+  },
+  {
+    "id": "STG-002",
+    "provider_name": "世田谷区",
+    "name": "救急通報システム「愛のペンダント」",
+    "scheme": "municipal_extra",
+    "description": "ペンダント型ボタンを押すと民間受信センターに通報。必要に応じて救急車出動・警備会社が駆けつけ。機器は貸し出し。対象：65歳以上のひとりぐらし・高齢者のみ世帯・日中独居世帯で慢性疾患があるなど常時注意を要する方。",
+    "needs_tag_ids": ["safety_check_day", "emergency_system"],
+    "price": 8000,
+    "price_source_snippet": "システム設置時に利用者負担金として8,000円、光回線等の利用者は非常用電源に別途上限4,000円がかかります。（住民税非課税の方は免除）",
+    "reduction_hours": 0,
+    "application_route": "各総合支所保健福祉課 / 高齢福祉課 03-5432-2407",
+    "source_url": "https://www.city.setagaya.lg.jp/02082/2400.html",
+    "source_type": "自治体公式サービスページ",
+    "extracted_at": "2026-08-24T17:39:00.000Z",
+    "verified_at": null,
+    "verified_by": null,
+    "status": "draft",
+    "confidence_score": 0.98
+  },
+  {
+    "id": "STG-003",
+    "provider_name": "世田谷区",
+    "name": "ひとりぐらし高齢者見守り機器サービス利用料補助",
+    "scheme": "municipal_extra",
+    "description": "令和8年4月〜。70歳以上のひとりぐらし高齢者が見守り機器（緊急通報型・センサー型・生活リズム型）を利用する際の月額料金を最大1,000円補助。対応機器：セコムみまもりホン2・東急セキュリティSAFE-1・まもりこ・いまイルモ等。区窓口での受付なし、各登録事業者へ直接申込。",
+    "needs_tag_ids": ["safety_check_day", "emergency_system"],
+    "price": 0,
+    "price_source_snippet": "補助額は1人当たり最大月額1,000円です。（初期費用・その他の費用は除く）",
+    "reduction_hours": 0,
+    "application_route": "各登録事業者へ直接申込（セコム・東急セキュリティ・ネコリコ・ソルクシーズ等）",
+    "source_url": "https://www.city.setagaya.lg.jp/02082/30259.html",
+    "source_type": "自治体公式サービスページ",
+    "extracted_at": "2026-08-24T17:39:00.000Z",
+    "verified_at": null,
+    "verified_by": null,
+    "status": "draft",
+    "confidence_score": 0.96
   }
 ]

@@ -64,6 +64,16 @@ export const PROVIDERS_SEED: Provider[] = [
     url: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
     providerType: 'care_facility',
   },
+  {
+    id: 'prov_setagaya_city',
+    name: '世田谷区 高齢福祉課',
+    address: '東京都世田谷区世田谷4-21-27',
+    lat: 35.6464,
+    lng: 139.6536,
+    tel: '03-5432-2407',
+    url: 'https://www.city.setagaya.lg.jp/fukushikenkou/koureikaigo/11551.html',
+    providerType: 'care_facility',
+  },
 ];
 
 // サービスデータ（nerima_collected_20260823 より生成）
@@ -831,8 +841,86 @@ export const INSURANCE_SERVICES_SEED: Service[] = [
   },
 ];
 
-// 全サービス統合（市区町村上乗せ + 総合事業J1 + 介護保険）
-export const SERVICES_SEED_ALL: Service[] = [...SERVICES_SEED, ...INSURANCE_SERVICES_SEED];
+// ─────────────────────────────────────────────
+// 世田谷区サービス（setagaya_playwright_20260824 収集）
+// ─────────────────────────────────────────────
+export const SERVICES_SEED_SETAGAYA: Service[] = [
+  {
+    id: 'STG-001',
+    providerId: 'prov_setagaya_city',
+    providerName: '世田谷区（地域ボランティア団体）',
+    name: '会食サービス',
+    scheme: 'municipal_extra',
+    description: '地域のボランティアが作る食事を地区会館等で提供。月1回〜週1回実施。外出機会・地域交流の場を確保。65歳以上でひとりぐらしの方等が対象。',
+    needsTagIds: ['cooking', 'talking_partner'],
+    targetCareLevels: ['support_1', 'support_2', 'care_1', 'care_2', 'care_3', 'care_4', 'care_5', 'unknown'],
+    targetHouseholds: ['single', 'elderly_only'],
+    availableDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+    availablePeriods: ['daytime'],
+    priceModel: 'per_time',
+    price: 400,
+    reductionHours: 1.5,
+    applicationRoute: 'あんしんすこやかセンター / 総合支所保健福祉課 / 高齢福祉課 03-5432-2407',
+    sourceUrl: 'https://www.city.setagaya.lg.jp/02082/2402.html',
+    sourceType: '自治体公式サービスページ',
+    priceSourceSnippet: '1食400円〜（協力団体等により異なります。）',
+    verifiedAt: '2026-08-24',
+    verifiedBy: 'setagaya_playwright_20260824',
+    status: 'draft',
+    confidenceScore: 0.97,
+  },
+  {
+    id: 'STG-002',
+    providerId: 'prov_setagaya_city',
+    providerName: '世田谷区',
+    name: '救急通報システム「愛のペンダント」',
+    scheme: 'municipal_extra',
+    description: 'ペンダント型ボタンを押すと民間受信センターに通報。必要に応じて救急車出動・警備会社が駆けつけ。機器は貸し出し。対象：65歳以上のひとりぐらし・高齢者のみ世帯・日中独居世帯で慢性疾患があるなど常時注意を要する方。',
+    needsTagIds: ['safety_check_day', 'emergency_system'],
+    targetCareLevels: ['support_1', 'support_2', 'care_1', 'care_2', 'care_3', 'care_4', 'care_5', 'unknown'],
+    targetHouseholds: ['single', 'elderly_only'],
+    availableDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+    availablePeriods: ['morning', 'daytime', 'evening', 'night'],
+    priceModel: 'per_time',
+    price: 8000,
+    reductionHours: 0,
+    applicationRoute: '各総合支所保健福祉課 / 高齢福祉課 03-5432-2407',
+    sourceUrl: 'https://www.city.setagaya.lg.jp/02082/2400.html',
+    sourceType: '自治体公式サービスページ',
+    priceSourceSnippet: 'システム設置時に利用者負担金として8,000円、光回線等の利用者は非常用電源に別途上限4,000円がかかります。（住民税非課税の方は免除）',
+    verifiedAt: '2026-08-24',
+    verifiedBy: 'setagaya_playwright_20260824',
+    status: 'draft',
+    confidenceScore: 0.98,
+  },
+  {
+    id: 'STG-003',
+    providerId: 'prov_setagaya_city',
+    providerName: '世田谷区',
+    name: 'ひとりぐらし高齢者見守り機器サービス利用料補助',
+    scheme: 'municipal_extra',
+    description: '令和8年4月〜。70歳以上のひとりぐらし高齢者が見守り機器（緊急通報型・センサー型・生活リズム型）を利用する際の月額料金を最大1,000円補助。対応機器：セコムみまもりホン2・東急セキュリティSAFE-1・まもりこ・いまイルモ等。区窓口での受付なし、各登録事業者へ直接申込。',
+    needsTagIds: ['safety_check_day', 'emergency_system'],
+    targetCareLevels: ['support_1', 'support_2', 'care_1', 'care_2', 'care_3', 'care_4', 'care_5', 'unknown'],
+    targetHouseholds: ['single'],
+    availableDays: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+    availablePeriods: ['morning', 'daytime', 'evening', 'night'],
+    priceModel: 'free',
+    price: 0,
+    reductionHours: 0,
+    applicationRoute: '各登録事業者へ直接申込（セコム・東急セキュリティ・ネコリコ・ソルクシーズ等）',
+    sourceUrl: 'https://www.city.setagaya.lg.jp/02082/30259.html',
+    sourceType: '自治体公式サービスページ',
+    priceSourceSnippet: '補助額は1人当たり最大月額1,000円です。（初期費用・その他の費用は除く）',
+    verifiedAt: '2026-08-24',
+    verifiedBy: 'setagaya_playwright_20260824',
+    status: 'draft',
+    confidenceScore: 0.96,
+  },
+];
+
+// 全サービス統合（市区町村上乗せ + 総合事業J1 + 介護保険 + 世田谷区）
+export const SERVICES_SEED_ALL: Service[] = [...SERVICES_SEED, ...INSURANCE_SERVICES_SEED, ...SERVICES_SEED_SETAGAYA];
 
 // 後方互換エクスポート（既存コードが ALL_SERVICES を参照）
 export const ALL_SERVICES: Service[] = SERVICES_SEED_ALL;
