@@ -40,7 +40,7 @@ const MUNICIPALITIES: Record<string, { prefix: string; seedUrl: string; tel: str
   },
   '新宿区': {
     prefix: 'SJK',
-    seedUrl: 'https://www.city.shinjuku.lg.jp/fukushi/koresha/index.html',
+    seedUrl: 'https://www.city.shinjuku.lg.jp/fukushi/index05.html',
     tel: '03-5273-4512',
   },
   '渋谷区': {
