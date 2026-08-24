@@ -42,6 +42,28 @@ export const PROVIDERS_SEED: Provider[] = [
     url: 'https://www.nerima-shakyo.or.jp/',
     providerType: 'social_welfare',
   },
+  {
+    // J1（080801houmon.xlsx）登録 185事業所を代表
+    id: 'prov_nerima_houmon',
+    name: '練馬区内 訪問介護事業者（介護保険指定・第一号訪問事業登録 185事業所）',
+    address: '東京都練馬区内（各事業所所在地はJ1参照）',
+    lat: 35.7356,
+    lng: 139.6536,
+    tel: '※各事業所へお問い合わせください',
+    url: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
+    providerType: 'care_facility',
+  },
+  {
+    // J1（080801tuusho.xlsx）登録 200事業所を代表
+    id: 'prov_nerima_tuusho',
+    name: '練馬区内 通所介護事業者（介護保険指定・第一号通所事業登録 200事業所）',
+    address: '東京都練馬区内（各事業所所在地はJ1参照）',
+    lat: 35.7356,
+    lng: 139.6536,
+    tel: '※各事業所へお問い合わせください',
+    url: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
+    providerType: 'care_facility',
+  },
 ];
 
 // サービスデータ（nerima_collected_20260823 より生成）
@@ -672,5 +694,145 @@ export const SERVICES_SEED: Service[] = [
   }
 ];
 
+/**
+ * J1（総合事業）・介護保険サービス（全国共通）
+ *
+ * J1（nerima_collected_20260823/data/raw/J1/）から取得した
+ * 練馬区内の第一号訪問事業 185事業所・第一号通所事業 200事業所をもとに生成。
+ * 介護保険給付サービスは全国共通の報酬告示に基づく。
+ */
+export const INSURANCE_SERVICES_SEED: Service[] = [
+  // ─────────────────────────────────────────────
+  // 総合事業（J1由来 / 要支援1・2・事業対象者）
+  // ─────────────────────────────────────────────
+  {
+    id: 'NRM-J01',
+    providerId: 'prov_nerima_houmon',
+    providerName: '練馬区内 第一号訪問事業者（J1登録 185事業所）',
+    name: '訪問型サービスA（第一号訪問事業・生活援助相当）',
+    scheme: 'sogo_jigyo',
+    description: '練馬区総合事業。要支援1・2および事業対象者に対し、ヘルパーが自宅を訪問して調理・掃除・買い物・洗濯等の生活支援を行う。介護保険 訪問介護（生活援助）と同等のサービス内容。J1（080801houmon.xlsx）登録 185事業所が対応。',
+    needsTagIds: ["cooking", "cleaning", "shopping_daily", "laundry", "garbage"],
+    targetCareLevels: ["support_1", "support_2"],
+    targetHouseholds: ["single", "elderly_only", "living_together", "long_distance"],
+    availableDays: ["mon","tue","wed","thu","fri","sat","sun"],
+    availablePeriods: ["morning","daytime","evening"],
+    priceModel: 'per_time',
+    price: 230,
+    reductionHours: 1.0,
+    applicationRoute: '地域包括支援センター（ケアプランへの位置付けが必要）',
+    sourceUrl: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
+    sourceType: '自治体公式サイト・J1',
+    priceSourceSnippet: '訪問介護相当サービス 1回225〜230単位（1割負担）。J1（080801houmon.xlsx）より。地域区分加算含む概算。',
+    verifiedAt: '2026-08-23',
+    verifiedBy: 'nerima_pipeline_20260823',
+    status: 'draft',
+    confidenceScore: 0.8,
+  },
+  {
+    id: 'NRM-J02',
+    providerId: 'prov_nerima_tuusho',
+    providerName: '練馬区内 第一号通所事業者（J1登録 200事業所）',
+    name: '通所型サービスA（第一号通所事業・介護予防デイ相当）',
+    scheme: 'sogo_jigyo',
+    description: '練馬区総合事業。要支援1・2および事業対象者に対し、通所施設で機能訓練・入浴・食事・レクリエーション等を提供。介護保険 通所介護（デイサービス）と同等のサービス内容。J1（080801tuusho.xlsx）登録 200事業所が対応。',
+    needsTagIds: ["day_service", "talking_partner", "bath_care"],
+    targetCareLevels: ["support_1", "support_2"],
+    targetHouseholds: ["single", "elderly_only", "living_together", "long_distance"],
+    availableDays: ["mon","tue","wed","thu","fri","sat"],
+    availablePeriods: ["daytime"],
+    priceModel: 'per_time',
+    price: 300,
+    reductionHours: 4.0,
+    applicationRoute: '地域包括支援センター（ケアプランへの位置付けが必要）',
+    sourceUrl: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
+    sourceType: '自治体公式サイト・J1',
+    priceSourceSnippet: '通所介護相当サービス 1回298〜305単位（1割負担）。J1（080801tuusho.xlsx）より。地域区分加算含む概算。',
+    verifiedAt: '2026-08-23',
+    verifiedBy: 'nerima_pipeline_20260823',
+    status: 'draft',
+    confidenceScore: 0.8,
+  },
+
+  // ─────────────────────────────────────────────
+  // 介護保険給付サービス（全国共通 / 要介護1〜5）
+  // ─────────────────────────────────────────────
+  {
+    id: 'INS-001',
+    providerId: 'prov_nerima_houmon',
+    providerName: '練馬区内 訪問介護事業者（介護保険指定）',
+    name: '訪問介護（生活援助）調理・掃除・洗濯・買い物',
+    scheme: 'insurance',
+    description: '介護保険給付。ヘルパーが自宅を訪問し、調理・掃除・洗濯・買い物等の生活援助を行う（45分以上）。同居家族がいる場合は「やむを得ない事情」の確認が必要。',
+    needsTagIds: ["cooking", "cleaning", "shopping_daily", "laundry", "garbage"],
+    targetCareLevels: ["care_1","care_2","care_3","care_4","care_5"],
+    targetHouseholds: ["single", "elderly_only", "living_together", "long_distance"],
+    availableDays: ["mon","tue","wed","thu","fri","sat","sun"],
+    availablePeriods: ["morning","daytime","evening"],
+    priceModel: 'per_time',
+    price: 225,
+    reductionHours: 1.0,
+    applicationRoute: 'ケアマネジャー（居宅介護支援事業所）へ相談',
+    sourceUrl: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
+    sourceType: '介護保険法・介護報酬告示（2024年4月改定）',
+    priceSourceSnippet: '訪問介護 生活援助45分以上 225単位 → 利用者1割負担225円（地域区分・加算別途）。令和6年度改定後。',
+    verifiedAt: '2026-08-23',
+    verifiedBy: 'nerima_pipeline_20260823',
+    status: 'draft',
+    confidenceScore: 0.95,
+  },
+  {
+    id: 'INS-002',
+    providerId: 'prov_nerima_houmon',
+    providerName: '練馬区内 訪問介護事業者（介護保険指定）',
+    name: '訪問介護（身体介護）入浴・排泄・着替え介助',
+    scheme: 'insurance',
+    description: '介護保険給付。ヘルパーが自宅を訪問し、入浴介助・排泄介助・着替え介助・服薬確認等の身体介護を行う（30分以上1時間未満）。',
+    needsTagIds: ["bath_care", "excretion_care", "dressing_care", "medication_check"],
+    targetCareLevels: ["care_1","care_2","care_3","care_4","care_5"],
+    targetHouseholds: ["single", "elderly_only", "living_together", "long_distance"],
+    availableDays: ["mon","tue","wed","thu","fri","sat","sun"],
+    availablePeriods: ["morning","daytime","evening"],
+    priceModel: 'per_time',
+    price: 396,
+    reductionHours: 1.5,
+    applicationRoute: 'ケアマネジャー（居宅介護支援事業所）へ相談',
+    sourceUrl: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
+    sourceType: '介護保険法・介護報酬告示（2024年4月改定）',
+    priceSourceSnippet: '訪問介護 身体介護30分以上1時間未満 396単位 → 利用者1割負担396円（地域区分・加算別途）。令和6年度改定後。',
+    verifiedAt: '2026-08-23',
+    verifiedBy: 'nerima_pipeline_20260823',
+    status: 'draft',
+    confidenceScore: 0.95,
+  },
+  {
+    id: 'INS-003',
+    providerId: 'prov_nerima_tuusho',
+    providerName: '練馬区内 通所介護事業者（介護保険指定）',
+    name: '通所介護（デイサービス）機能訓練・入浴・食事',
+    scheme: 'insurance',
+    description: '介護保険給付。送迎付きで施設に通所し、入浴・食事・機能訓練・レクリエーション等を受ける（7〜8時間）。要介護2の場合の1割負担は約800円/回（食費・日常生活費は別途実費）。',
+    needsTagIds: ["day_service", "bath_care", "talking_partner", "rehab_training", "excretion_care"],
+    targetCareLevels: ["care_1","care_2","care_3","care_4","care_5"],
+    targetHouseholds: ["single", "elderly_only", "living_together", "long_distance"],
+    availableDays: ["mon","tue","wed","thu","fri","sat"],
+    availablePeriods: ["daytime"],
+    priceModel: 'per_time',
+    price: 800,
+    reductionHours: 7.0,
+    applicationRoute: 'ケアマネジャー（居宅介護支援事業所）へ相談',
+    sourceUrl: 'https://www.city.nerima.tokyo.jp/hokenfukushi/kaigohoken/kunaikaigosurvice.html',
+    sourceType: '介護保険法・介護報酬告示（2024年4月改定）',
+    priceSourceSnippet: '通所介護 要介護2 7時間以上8時間未満 795〜895単位 → 利用者1割負担795〜895円（地域区分・加算別途）。食費・日常生活費は実費。令和6年度改定後。',
+    verifiedAt: '2026-08-23',
+    verifiedBy: 'nerima_pipeline_20260823',
+    status: 'draft',
+    confidenceScore: 0.9,
+  },
+];
+
+// 全サービス統合（市区町村上乗せ + 総合事業J1 + 介護保険）
+export const SERVICES_SEED_ALL: Service[] = [...SERVICES_SEED, ...INSURANCE_SERVICES_SEED];
+
 // 後方互換エクスポート（既存コードが ALL_SERVICES を参照）
-export const ALL_SERVICES: Service[] = SERVICES_SEED;
+export const ALL_SERVICES: Service[] = SERVICES_SEED_ALL;

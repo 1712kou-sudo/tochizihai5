@@ -103,11 +103,8 @@ export function getCandidatesForSlot(
     if (!service.availableDays.includes(day)) return false;
     if (!service.availablePeriods.includes(period)) return false;
 
-    // 要介護度の適合
-    if (!service.targetCareLevels.includes(careLevel)) {
-      // 未申請の場合、保険給付サービスは利用不可
-      if (careLevel === 'unapplied' && service.scheme === 'insurance') return false;
-    }
+    // 要介護度の適合（targetCareLevels に含まれない場合は除外）
+    if (!service.targetCareLevels.includes(careLevel)) return false;
 
     // 保険の生活援助で同居家族がいる場合の制限判定
     if (
