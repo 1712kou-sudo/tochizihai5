@@ -117,29 +117,50 @@ function isOfficialDomain(hostname: string): boolean {
   return false;
 }
 
+// 明らかにサービス無関係なナビゲーションリンクのアンカーテキスト
+const NAV_SKIP_TEXTS = [
+  'ページトップ', 'トップページ', 'サイトマップ', 'プライバシーポリシー',
+  '文字サイズ', '閲覧支援', '音声読み上げ', 'ふりがな', 'Foreign Language',
+  'English', '中文', '한국어', 'Deutsch', 'Français', 'Español', 'Português',
+  '本文へスキップ', 'ページID', '旧ページID', 'お問い合わせ', 'アクセス',
+  '窓口', 'サイト内検索', '検索', 'メニュー', '閉じる',
+];
+
 /**
  * ページ内の同ドメインリンクを収集。
  * - 同一オリジンのみ（discovery_rules.json: lg.jp 外は除外対象）
- * - ROLE_SEARCH_TERMS のいずれかを含むリンクのみ
+ * - アンカーテキストが日本語（ひらがな・カタカナ・漢字）を含むリンクを採用
+ *   ※ 自治体サイトのURLパスはASCIIのみのため href キーワードマッチは使わない
+ *   ※ 各自治体で異なる語彙（救急通報 vs 緊急通報、会食 vs 配食 等）に対応
  * - NEGATIVE_TERMS を含むリンクは除外
+ * - ナビゲーション系リンクは除外
  */
 function extractLinks(html: string, baseUrl: string): string[] {
   const base = new URL(baseUrl);
   const seen = new Set<string>();
   const results: string[] = [];
+  // 日本語文字（ひらがな・カタカナ・漢字）を含むか判定
+  const hasJapanese = (s: string) => /[\u3040-\u30ff\u4e00-\u9fff]/.test(s);
 
-  for (const m of html.matchAll(/href="([^"#?]+)"/g)) {
+  for (const m of html.matchAll(/<a\b[^>]*\bhref="([^"#][^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
     try {
-      const abs = new URL(m[1], base).href;
-      // 同一オリジンのみ（社協・シルバー等の lg.jp 外は除外）
+      const href = m[1];
+      if (href.startsWith('javascript')) continue;
+      const anchorText = m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      const abs = new URL(href, base).href;
+
+      // 同一オリジンのみ
       if (!abs.startsWith(base.origin)) continue;
       if (seen.has(abs)) continue;
 
-      const linkText = m[1];
-      // role search_terms のいずれかを含むリンクのみ採用
-      if (!ALL_ROLE_TERMS.some((kw) => linkText.includes(kw) || abs.includes(kw))) continue;
+      // アンカーテキストが日本語を含まない（英語ナビ等）はスキップ
+      if (!hasJapanese(anchorText)) continue;
+      // 短すぎるテキスト（「次へ」等）はスキップ
+      if (anchorText.length < 6) continue;
+      // ナビゲーション系スキップ
+      if (NAV_SKIP_TEXTS.some((t) => anchorText.includes(t))) continue;
       // 否定語チェック
-      if (hasNegativeTerm(linkText) || hasNegativeTerm(abs)) continue;
+      if (hasNegativeTerm(anchorText) || hasNegativeTerm(href)) continue;
 
       seen.add(abs);
       results.push(abs);
