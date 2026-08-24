@@ -131,6 +131,11 @@ export default function HomePage() {
     });
   };
 
+  // AI収集で取得した新規Draftサービスを追加（AdminPipelineから呼ばれる）
+  const handleAddDraftServices = (newServices: Service[]) => {
+    setServices((prev) => [...prev, ...newServices]);
+  };
+
   // 一括ステータス更新（AdminPipelineから呼ばれる）
   const handleBulkUpdateStatus = (ids: string[], newStatus: 'approved' | 'rejected' | 'draft') => {
     const idSet = new Set(ids);
@@ -490,6 +495,7 @@ export default function HomePage() {
               services={services}
               onUpdateStatus={handleUpdateServiceStatus}
               onBulkUpdateStatus={handleBulkUpdateStatus}
+              onAddDraftServices={handleAddDraftServices}
             />
           )}
         </div>

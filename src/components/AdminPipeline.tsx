@@ -74,13 +74,30 @@ function buildDemoLogs(municipalityName: string, url: string, prefix: string): s
   ];
 }
 
+// AI収集で取得したサービスの一時型（Service に変換する前）
+interface CollectedItem {
+  id: string;           // フロントで採番
+  name: string;
+  scheme: string;
+  description: string;
+  needs_tag_ids: string[];
+  price: number | null;
+  price_source_snippet: string;
+  reduction_hours: number;
+  application_route: string;
+  confidence_score: number;
+  source_url: string;
+  state: 'pending' | 'added' | 'skipped';
+}
+
 interface AdminPipelineProps {
   services: Service[];
   onUpdateStatus: (id: string, newStatus: 'approved' | 'rejected' | 'draft') => void;
   onBulkUpdateStatus: (ids: string[], newStatus: 'approved' | 'rejected' | 'draft') => void;
+  onAddDraftServices: (newServices: Service[]) => void;
 }
 
-export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdateStatus, onBulkUpdateStatus }) => {
+export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdateStatus, onBulkUpdateStatus, onAddDraftServices }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isCrawling, setIsCrawling] = useState<boolean>(false);
   const [crawlLogs, setCrawlLogs] = useState<string[]>([]);
@@ -96,6 +113,18 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
   const [copied, setCopied] = useState<boolean>(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
+  // APIキー
+  const [apiKey, setApiKey] = useState<string>(() =>
+    typeof window !== 'undefined' ? (localStorage.getItem('keashiru_anthropic_key') ?? '') : ''
+  );
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
+
+  // 本番収集
+  const [isCollecting, setIsCollecting] = useState<boolean>(false);
+  const [collectProgress, setCollectProgress] = useState<string>('');
+  const [collectError, setCollectError] = useState<string>('');
+  const [collectedItems, setCollectedItems] = useState<CollectedItem[]>([]);
+
   const activeName = useCustomUrl ? (customName || 'カスタム') : selectedMunicipality;
   const activeCfg = MUNICIPALITIES[selectedMunicipality];
   const activeUrl = useCustomUrl ? customUrl : activeCfg?.seedUrl ?? '';
@@ -104,6 +133,105 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
   const cliCommand = useCustomUrl
     ? `python crawler/collect_services.py --url "${activeUrl}" --name ${activeName} --prefix ${activePrefix}`
     : `python crawler/collect_services.py --municipality ${selectedMunicipality}`;
+
+  const saveApiKey = (key: string) => {
+    setApiKey(key);
+    if (typeof window !== 'undefined') localStorage.setItem('keashiru_anthropic_key', key);
+  };
+
+  /** CollectedItem を Service 型に変換（デフォルト値で補完） */
+  const toService = (item: CollectedItem, providerName: string): Service => ({
+    id: item.id,
+    providerId: `prov_ai_${activePrefix.toLowerCase()}`,
+    providerName,
+    name: item.name,
+    scheme: item.scheme as Service['scheme'],
+    description: item.description,
+    needsTagIds: item.needs_tag_ids,
+    targetCareLevels: ['support_1', 'support_2', 'care_1', 'care_2', 'care_3', 'care_4', 'care_5', 'unknown'],
+    targetHouseholds: ['single', 'elderly_only', 'living_together', 'long_distance'],
+    availableDays: ['mon', 'tue', 'wed', 'thu', 'fri'],
+    availablePeriods: ['daytime'],
+    priceModel: item.price === 0 ? 'free' : 'per_time',
+    price: item.price ?? 0,
+    reductionHours: item.reduction_hours,
+    applicationRoute: item.application_route,
+    sourceUrl: item.source_url,
+    sourceType: '自治体公式サービスページ（AI収集）',
+    priceSourceSnippet: item.price_source_snippet,
+    verifiedAt: new Date().toISOString().split('T')[0],
+    verifiedBy: `ai_collect_${activePrefix.toLowerCase()}`,
+    status: 'draft',
+    confidenceScore: item.confidence_score,
+  });
+
+  /** 承認ボタン：Serviceに変換してリストに追加 */
+  const handleApproveItem = (item: CollectedItem) => {
+    const svc = toService(item, activeName);
+    onAddDraftServices([svc]);
+    setCollectedItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, state: 'added' } : i))
+    );
+  };
+
+  /** スキップ */
+  const handleSkipItem = (itemId: string) => {
+    setCollectedItems((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, state: 'skipped' } : i))
+    );
+  };
+
+  /** 本番収集：/api/collect を呼び出す */
+  const handleRealCollect = async () => {
+    if (!apiKey || !activeUrl) return;
+    setIsCollecting(true);
+    setCollectedItems([]);
+    setCollectError('');
+
+    // ① まずリンク一覧を取得してサービスページを探す
+    setCollectProgress('ページのリンクを収集中...');
+    let urls: string[] = [activeUrl];
+    try {
+      const linksResp = await fetch(`/api/links?url=${encodeURIComponent(activeUrl)}`);
+      if (linksResp.ok) {
+        const { links } = await linksResp.json() as { links: string[] };
+        if (links.length > 0) urls = [activeUrl, ...links.slice(0, 4)];
+      }
+    } catch { /* fallback to seed url */ }
+
+    // ② 各URLからサービスを収集
+    const allItems: CollectedItem[] = [];
+    for (let i = 0; i < urls.length; i++) {
+      const u = urls[i];
+      setCollectProgress(`収集中 ${i + 1}/${urls.length}：${u.split('/').slice(-2).join('/')}`);
+      try {
+        const resp = await fetch('/api/collect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: u, apiKey, municipalityName: activeName }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json() as { error: string };
+          throw new Error(err.error);
+        }
+        const { services } = await resp.json() as { services: Omit<CollectedItem, 'id' | 'source_url' | 'state'>[] };
+        services.forEach((s, idx) => {
+          allItems.push({
+            ...s,
+            id: `${activePrefix}-AI-${Date.now()}-${allItems.length + idx}`,
+            source_url: u,
+            state: 'pending',
+          });
+        });
+      } catch (e) {
+        setCollectError(`エラー (${u}): ${e}`);
+      }
+    }
+
+    setCollectedItems(allItems);
+    setCollectProgress(`収集完了 — ${allItems.length} 件抽出`);
+    setIsCollecting(false);
+  };
 
   const handleCopyCommand = () => {
     navigator.clipboard.writeText(cliCommand).then(() => {
@@ -287,13 +415,35 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
             </button>
           </div>
 
+          {/* APIキー入力 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="text-[11px] text-stone-500 font-bold shrink-0">Anthropic API Key</label>
+            <div className="relative flex-1 min-w-48 max-w-xs">
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                placeholder="sk-ant-..."
+                value={apiKey}
+                onChange={(e) => saveApiKey(e.target.value)}
+                className="w-full px-3 py-1.5 pr-12 rounded-lg border border-stone-200 text-xs font-mono focus:outline-orange-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-[11px] font-bold"
+              >
+                {showApiKey ? '隠す' : '表示'}
+              </button>
+            </div>
+            <span className="text-[11px] text-stone-400">ブラウザ内のみ保存・外部送信なし</span>
+          </div>
+
           {/* 実行ボタン */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
               onClick={handleRunCrawlerDemo}
               disabled={isCrawling || (useCustomUrl && !customUrl)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-stone-700 hover:bg-stone-800 text-white font-bold text-sm transition-colors disabled:opacity-40"
             >
               {isCrawling ? (
                 <><RefreshCw className="w-4 h-4 animate-spin" /><span>収集中...</span></>
@@ -301,9 +451,21 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
                 <><Play className="w-4 h-4 fill-white" /><span>デモ実行</span></>
               )}
             </button>
-            <p className="text-[11px] text-stone-400">
-              実際の収集はターミナルで上記コマンドを実行してください。
-            </p>
+            <button
+              type="button"
+              onClick={handleRealCollect}
+              disabled={isCollecting || !apiKey || (useCustomUrl && !customUrl)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors disabled:opacity-40"
+            >
+              {isCollecting ? (
+                <><RefreshCw className="w-4 h-4 animate-spin" /><span className="max-w-48 truncate">{collectProgress || '収集中...'}</span></>
+              ) : (
+                <><Bot className="w-4 h-4" /><span>本番収集（Claude API使用）</span></>
+              )}
+            </button>
+            {!apiKey && (
+              <p className="text-[11px] text-amber-600">APIキーを入力すると本番収集が使えます。</p>
+            )}
           </div>
         </div>
 
@@ -325,6 +487,80 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
               </div>
             ))}
             <div ref={logEndRef} />
+          </div>
+        )}
+
+        {/* 収集結果（CollectedItems） */}
+        {(collectedItems.length > 0 || collectError) && (
+          <div className="border-t border-stone-100 px-6 py-5 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-sm font-bold text-stone-800">
+                収集結果 — {collectedItems.length} 件（承認するとDraftとして登録されます）
+              </h3>
+              {collectError && (
+                <p className="text-[11px] text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg">{collectError}</p>
+              )}
+            </div>
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+              {collectedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className={`rounded-lg border px-4 py-3 flex items-start gap-3 transition-opacity ${
+                    item.state === 'added' ? 'border-emerald-300 bg-emerald-50 opacity-70' :
+                    item.state === 'skipped' ? 'border-stone-200 bg-stone-50 opacity-40' :
+                    'border-stone-200 bg-white'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-sm text-stone-900">{item.name}</span>
+                      <span className="text-[11px] text-stone-400 font-mono shrink-0">
+                        信頼度 {(item.confidence_score * 100).toFixed(0)}%
+                      </span>
+                      <span className="text-[11px] text-stone-400 shrink-0">
+                        {item.price === null ? '料金不明' : item.price === 0 ? '無料' : `${item.price.toLocaleString()}円`}
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-stone-600 mt-0.5 line-clamp-2">{item.description}</p>
+                    <a
+                      href={item.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-orange-600 hover:underline flex items-center gap-0.5 mt-0.5"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      {item.source_url.split('/').slice(-2).join('/')}
+                    </a>
+                  </div>
+                  <div className="flex flex-col gap-1.5 shrink-0">
+                    {item.state === 'pending' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleApproveItem(item)}
+                          className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-colors"
+                        >
+                          Draft追加
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSkipItem(item.id)}
+                          className="px-3 py-1 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-700 text-[11px] font-medium transition-colors"
+                        >
+                          スキップ
+                        </button>
+                      </>
+                    ) : item.state === 'added' ? (
+                      <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />追加済み
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-stone-400">スキップ済み</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
