@@ -179,16 +179,19 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     }
 
     // Level-2: 各カテゴリページからさらにリンクを取得（サービス個別ページへ到達）
+    // slice(0, N) は使わず seen による重複除去に任せる。
+    // extractLinks は最大20件返すが、先頭はカテゴリナビ（already in seen）が多く、
+    // 実際のサービス詳細ページは後ろの方にあるため全件を seen フィルタに通す。
     setCollectProgress('サブページのリンクを収集中...');
-    for (const l2 of level2Links.slice(0, 6)) {
+    for (const l2 of level2Links.slice(0, 8)) {
       const level3Links = await fetchLinks(l2);
-      for (const l3 of level3Links.slice(0, 5)) {
+      for (const l3 of level3Links) {
         if (!seen.has(l3)) { seen.add(l3); urls.push(l3); }
-        if (urls.length >= 25) break;
+        if (urls.length >= 35) break;
       }
-      if (urls.length >= 25) break;
+      if (urls.length >= 35) break;
     }
-    urls = urls.slice(0, 25);
+    urls = urls.slice(0, 35);
 
     // ② 各URLからサービスを収集
     const allItems: CollectedItem[] = [];
