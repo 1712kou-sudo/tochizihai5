@@ -155,16 +155,40 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     setCollectedItems([]);
     setCollectError('');
 
-    // ① まずリンク一覧を取得してサービスページを探す
+    // ① まずリンク一覧を取得してサービスページを探す（2段階クロール）
+    // 自治体サイトは「トップ→カテゴリ→個別サービス」と3階層になっていることが多い。
+    // 1段階だけだとカテゴリページ止まりになり料金情報に到達できないため、
+    // Level-2 ページからもさらにリンクを展開して Level-3 のサービスページを収集する。
     setCollectProgress('ページのリンクを収集中...');
+    const fetchLinks = async (u: string): Promise<string[]> => {
+      try {
+        const r = await fetch(`/api/links?url=${encodeURIComponent(u)}`);
+        if (!r.ok) return [];
+        const { links } = await r.json() as { links: string[] };
+        return links ?? [];
+      } catch { return []; }
+    };
+
+    const seen = new Set<string>([activeUrl]);
     let urls: string[] = [activeUrl];
-    try {
-      const linksResp = await fetch(`/api/links?url=${encodeURIComponent(activeUrl)}`);
-      if (linksResp.ok) {
-        const { links } = await linksResp.json() as { links: string[] };
-        if (links.length > 0) urls = [activeUrl, ...links.slice(0, 9)];
+
+    // Level-1: シードページからリンクを取得
+    const level2Links = await fetchLinks(activeUrl);
+    for (const l2 of level2Links.slice(0, 6)) {
+      if (!seen.has(l2)) { seen.add(l2); urls.push(l2); }
+    }
+
+    // Level-2: 各カテゴリページからさらにリンクを取得（サービス個別ページへ到達）
+    setCollectProgress('サブページのリンクを収集中...');
+    for (const l2 of level2Links.slice(0, 6)) {
+      const level3Links = await fetchLinks(l2);
+      for (const l3 of level3Links.slice(0, 5)) {
+        if (!seen.has(l3)) { seen.add(l3); urls.push(l3); }
+        if (urls.length >= 25) break;
       }
-    } catch { /* fallback to seed url */ }
+      if (urls.length >= 25) break;
+    }
+    urls = urls.slice(0, 25);
 
     // ② 各URLからサービスを収集
     const allItems: CollectedItem[] = [];
