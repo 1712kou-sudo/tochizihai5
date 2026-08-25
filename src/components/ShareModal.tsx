@@ -9,7 +9,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useDelayedUnmount } from '@/hooks/useDelayedUnmount';
-import { X, Copy, Check, Share2, Shield } from 'lucide-react';
+import { X, Copy, Check, Share2, Shield, ExternalLink } from 'lucide-react';
 import { UserInputData } from '@/types';
 
 interface ShareModalProps {
@@ -79,16 +79,26 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, userInp
 
         {/* URLコピーボックス */}
         <div className="p-3 bg-stone-50 rounded-lg border border-stone-200 flex items-center space-x-2">
-          <input
-            type="text"
-            readOnly
-            value={shareUrl}
-            className="flex-1 bg-transparent text-xs font-mono text-stone-700 select-all outline-none truncate"
-          />
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-xs font-mono text-orange-600 hover:text-orange-800 underline underline-offset-2 truncate"
+          >
+            {shareUrl}
+          </a>
+          <button
+            type="button"
+            onClick={() => window.open(shareUrl, '_blank', 'noopener,noreferrer')}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors shrink-0"
+            title="新しいタブで開く"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
           <button
             type="button"
             onClick={handleCopy}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
               copied
                 ? 'bg-emerald-600 text-white'
                 : 'bg-orange-600 hover:bg-orange-700 text-white shadow-xs'
