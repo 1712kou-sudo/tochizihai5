@@ -10,23 +10,31 @@
 import React, { useMemo, useState } from 'react';
 import { useDelayedUnmount } from '@/hooks/useDelayedUnmount';
 import { X, Copy, Check, Share2, Shield } from 'lucide-react';
+import { UserInputData } from '@/types';
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userInput: UserInputData;
+  monthlyBudget: number;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, userInput, monthlyBudget }) => {
   const [copied, setCopied] = useState(false);
 
-  // 共有トークンは一度だけ生成して固定する（表示URLとコピーURLを一致させる）
   const { isMounted, state } = useDelayedUnmount(isOpen);
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const token = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
-    return `${window.location.origin}/?share=${token}`;
-  }, []);
+    try {
+      const payload = JSON.stringify({ userInput, monthlyBudget });
+      const encoded = btoa(unescape(encodeURIComponent(payload)));
+      return `${window.location.origin}/?data=${encoded}`;
+    } catch {
+      return window.location.origin;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isMounted) return null;
 

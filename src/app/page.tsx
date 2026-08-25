@@ -245,6 +245,27 @@ export default function HomePage() {
     setCurrentSlots(buildOptimizedSlots(newData, newData.monthlyBudget, services));
   };
 
+  // 共有URLからの状態復元
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('data');
+    if (!encoded) return;
+    try {
+      const payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      if (payload.userInput && typeof payload.monthlyBudget === 'number') {
+        setUserInput(payload.userInput);
+        setMonthlyBudget(payload.monthlyBudget);
+        setHasStarted(true);
+        setCurrentSlots(buildOptimizedSlots(payload.userInput, payload.monthlyBudget, ALL_SERVICES));
+      }
+    } catch {
+      // 無効なデータは無視
+    }
+  // 初回マウント時のみ実行
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ランディングの登場シーケンス（ファーストビューなので即時発火）
   const landing = useReveal<HTMLElement>({ immediate: true });
 
@@ -516,6 +537,8 @@ export default function HomePage() {
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
+        userInput={userInput}
+        monthlyBudget={monthlyBudget}
       />
 
       {/* 免責事項・フッター（全画面共通） */}
