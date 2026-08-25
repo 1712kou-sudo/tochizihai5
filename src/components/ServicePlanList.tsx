@@ -86,43 +86,59 @@ export const ServicePlanList: React.FC<ServicePlanListProps> = ({ slots, onSelec
               style={{ ...list.item(i).style, ['--rv-y' as string]: '8px', ['--rv-step' as string]: 'var(--stag-base)', ['--rv-dur' as string]: 'var(--dur-base)' }}
               className={list.item(i).className}
             >
-              <button
-                type="button"
-                onClick={() => onSelectSlot(row.firstSlot)}
-                className="press w-full text-left px-4 sm:px-5 py-3.5 hover:bg-stone-50 transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${scheme.badgeColor}`}
-                    >
-                      {scheme.label}
-                    </span>
-                    <span className="text-[11px] text-stone-500 truncate">
-                      {row.service.providerName}
-                    </span>
+              <div className="flex items-stretch">
+                <button
+                  type="button"
+                  onClick={() => onSelectSlot(row.firstSlot)}
+                  className="press flex-1 text-left px-4 sm:px-5 py-3.5 hover:bg-stone-50 transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${scheme.badgeColor}`}
+                      >
+                        {scheme.label}
+                      </span>
+                      <span className="text-[11px] text-stone-500 truncate">
+                        {row.service.providerName}
+                      </span>
+                    </div>
+                    <div className="text-sm font-bold text-stone-900 leading-snug">
+                      {row.service.name}
+                    </div>
                   </div>
-                  <div className="text-sm font-bold text-stone-900 leading-snug">
-                    {row.service.name}
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-4 sm:gap-6 shrink-0">
-                  <div className="text-right">
-                    <div className="text-[11px] text-stone-500">週の回数</div>
-                    <div className="text-sm font-bold text-stone-900 tabular-nums">
-                      {row.timesPerWeek} 回
+                  <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+                    <div className="text-right">
+                      <div className="text-[11px] text-stone-500">週の回数</div>
+                      <div className="text-sm font-bold text-stone-900 tabular-nums">
+                        {row.timesPerWeek} 回
+                      </div>
+                    </div>
+                    <div className="text-right min-w-[76px]">
+                      <div className="text-[11px] text-stone-500">月あたり</div>
+                      <div className="text-sm font-bold text-stone-900 tabular-nums">
+                        {row.monthlyCost > 0 ? `¥${Math.round(row.monthlyCost).toLocaleString()}` : '無料'}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right min-w-[76px]">
-                    <div className="text-[11px] text-stone-500">月あたり</div>
-                    <div className="text-sm font-bold text-stone-900 tabular-nums">
-                      {row.monthlyCost > 0 ? `¥${Math.round(row.monthlyCost).toLocaleString()}` : '無料'}
-                    </div>
+                </button>
+                {row.service.sourceUrl ? (
+                  <a
+                    href={row.service.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="公式根拠を確認"
+                    className="flex items-center px-3 sm:px-4 border-l border-stone-100 text-stone-300 hover:text-orange-700 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <div className="hidden sm:flex items-center px-4">
+                    <ExternalLink className="w-4 h-4 text-stone-200" />
                   </div>
-                  <ExternalLink className="w-4 h-4 text-stone-300 hidden sm:block" />
-                </div>
-              </button>
+                )}
+              </div>
             </li>
           );
         })}
