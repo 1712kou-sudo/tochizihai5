@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tochizihai5",
+  "compatibility_date": "2025-01-01",
+  "main": "./src/worker/index.ts",
+  "assets": {
+    "directory": "./.next-cf",
+    "binding": "ASSETS",
+    "not_found_handling": "none"
+  }
+}
