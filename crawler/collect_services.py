@@ -150,6 +150,28 @@ def scrape_page_text(page, url):
         return ''
 
 
+def _parse_json_from_response(raw: str):
+    """Claude レスポンスから JSON 配列を抽出する（複数パターン対応）"""
+    import re
+    raw = raw.strip()
+
+    # パターン1: ```json ... ``` または ``` ... ```
+    m = re.search(r'```(?:json)?\s*(\[.*?\])\s*```', raw, re.DOTALL)
+    if m:
+        return json.loads(m.group(1))
+
+    # パターン2: JSON 配列がそのまま返ってくる
+    m = re.search(r'(\[.*\])', raw, re.DOTALL)
+    if m:
+        return json.loads(m.group(1))
+
+    # パターン3: 空配列を示す文章（サービスなし）
+    if re.search(r'(サービス.{0,20}(見つかり|ありません|存在しない)|no service|empty)', raw, re.IGNORECASE):
+        return []
+
+    raise ValueError(f'JSON 配列が見つかりません: {raw[:200]}')
+
+
 def extract_with_claude(text, source_url, source_type):
     """Claude API でテキストからサービス情報を構造化抽出"""
     try:
@@ -164,15 +186,16 @@ def extract_with_claude(text, source_url, source_type):
             }]
         )
         raw = response.content[0].text.strip()
-        # JSON部分だけを抽出（```json ... ``` で囲まれている場合も考慮）
-        if '```' in raw:
-            raw = raw.split('```')[1]
-            if raw.startswith('json'):
-                raw = raw[4:]
-        services = json.loads(raw)
+        services = _parse_json_from_response(raw)
         return services if isinstance(services, list) else []
     except ImportError:
         print('  [WARN] anthropic パッケージが未インストール。pip install anthropic で導入してください。')
+        return []
+    except json.JSONDecodeError as e:
+        print(f'  [WARN] JSONパースエラー ({source_url}): {e}')
+        return []
+    except ValueError as e:
+        print(f'  [WARN] レスポンス解析失敗 ({source_url}): {e}')
         return []
     except Exception as e:
         print(f'  [WARN] Claude API エラー: {e}')
