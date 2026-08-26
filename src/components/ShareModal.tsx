@@ -7,34 +7,29 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useDelayedUnmount } from '@/hooks/useDelayedUnmount';
-import { X, Copy, Check, Share2, Shield, ExternalLink } from 'lucide-react';
-import { UserInputData } from '@/types';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
+import { X, Copy, Check, Share2, Shield } from 'lucide-react';
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userInput: UserInputData;
-  monthlyBudget: number;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, userInput, monthlyBudget }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
 
+  // 共有トークンは一度だけ生成して固定する（表示URLとコピーURLを一致させる）
   const { isMounted, state } = useDelayedUnmount(isOpen);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(isOpen, onClose, dialogRef);
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
-    try {
-      const payload = JSON.stringify({ userInput, monthlyBudget });
-      const encoded = btoa(unescape(encodeURIComponent(payload)));
-      return `${window.location.origin}/?data=${encoded}`;
-    } catch {
-      return window.location.origin;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+    const token = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+    return `${window.location.origin}/?share=${token}`;
+  }, []);
 
   if (!isMounted) return null;
 
@@ -53,65 +48,63 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, userInp
       }}
     >
       <div
-        className="panel panel-from-top glass-solid rounded-xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 space-y-5"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="panel panel-from-top w-full max-w-lg space-y-5 rounded-[28px] border-2 border-[#2D231E] bg-white p-5 sm:p-7"
         data-state={state}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="share-modal-title"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-          <div className="flex items-center space-x-2.5 text-orange-800">
-            <div className="p-2 rounded-xl bg-orange-100">
-              <Share2 className="w-5 h-5 text-orange-700" />
+        <div className="flex items-center justify-between gap-3 border-b-2 border-[#FDE8DC] pb-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FDE8DC]">
+              <Share2 className="h-5 w-5 text-[#B94716]" />
             </div>
-            <h3 className="font-bold text-lg text-stone-900">タイムライン共有リンクの発行</h3>
+            <h3 id="share-modal-title" className="text-lg font-bold leading-snug text-[#2D231E]">
+              タイムライン共有リンクの発行
+            </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            aria-label="共有モーダルを閉じる"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[#2D231E] bg-white text-[#2D231E] transition-colors hover:bg-[#FDE8DC]"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <p className="text-xs text-stone-600 leading-relaxed">
+        <p className="text-sm leading-relaxed text-[#5E514A] sm:text-base">
           発行されたリンクをきょうだいや親族にLINE・メールで送ると、同じタイムラインを見ながら「誰がどの枠を担当するか」を話し合えます。
         </p>
 
         {/* URLコピーボックス */}
-        <div className="p-3 bg-stone-50 rounded-lg border border-stone-200 flex items-center space-x-2">
-          <a
-            href={shareUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 text-xs font-mono text-orange-600 hover:text-orange-800 underline underline-offset-2 truncate"
-          >
-            {shareUrl}
-          </a>
-          <button
-            type="button"
-            onClick={() => window.open(shareUrl, '_blank', 'noopener,noreferrer')}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors shrink-0"
-            title="新しいタブで開く"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
+        <div className="flex flex-col gap-3 rounded-[20px] border-2 border-[#2D231E] bg-[#FFF7F2] p-3 sm:flex-row sm:items-center">
+          <input
+            type="text"
+            readOnly
+            value={shareUrl}
+            aria-label="共有URL"
+            className="min-h-11 min-w-0 flex-1 select-all truncate rounded-xl bg-white px-3 text-sm text-[#5E514A] outline-none ring-1 ring-[#FDE8DC] focus:ring-2 focus:ring-[#ED6A2C]"
+          />
           <button
             type="button"
             onClick={handleCopy}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border-2 px-4 text-sm font-bold transition-colors ${
               copied
-                ? 'bg-emerald-600 text-white'
-                : 'bg-orange-600 hover:bg-orange-700 text-white shadow-xs'
+                ? 'border-[#2D231E] bg-[#FDE8DC] text-[#2D231E]'
+                : 'border-[#2D231E] bg-[#C4511A] text-white hover:bg-[#9D3D12]'
             }`}
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5" />
+                <Check className="h-4 w-4" />
                 <span>コピー完了</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5" />
+                <Copy className="h-4 w-4" />
                 <span>URLをコピー</span>
               </>
             )}
@@ -119,12 +112,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, userInp
         </div>
 
         {/* プライバシー保護・倫理配慮 */}
-        <div className="p-4 rounded-lg bg-stone-50 border border-stone-200/80 space-y-2 text-xs text-stone-600">
-          <div className="flex items-center space-x-2 font-bold text-stone-800">
-            <Shield className="w-4 h-4 text-orange-600" />
+        <div className="space-y-3 rounded-[20px] border-2 border-[#FDE8DC] bg-[#FFF7F2] p-4 text-sm text-[#5E514A]">
+          <div className="flex items-center gap-2 font-bold text-[#2D231E]">
+            <Shield className="h-5 w-5 text-[#B94716]" />
             <span>プライバシー・個人情報の保護について</span>
           </div>
-          <ul className="list-disc list-inside space-y-1 text-[11px] text-stone-500">
+          <ul className="list-inside list-disc space-y-1.5 leading-relaxed text-[#756A64]">
             <li>お名前や要配慮個人情報はサーバーに保存されません。</li>
             <li>共有リンクの有効期限は発行から30日間です。</li>
             <li>マス目に記入した担当者メモは各ブラウザ内のみで保持されます。</li>
@@ -135,7 +128,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, userInp
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all"
+            className="min-h-11 rounded-xl border-2 border-[#2D231E] bg-[#2D231E] px-6 text-sm font-bold text-white transition-colors hover:bg-[#B94716]"
           >
             閉じる
           </button>

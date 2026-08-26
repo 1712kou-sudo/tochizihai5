@@ -32,44 +32,49 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ metrics, initialFami
       {/* 結論文 */}
       <section
         aria-label="計算結果の要約"
-        className="glass rounded-2xl border border-stone-200 px-6 sm:px-8 py-7"
+        className="rounded-[28px] border-2 border-[#2D231E] bg-white px-5 py-7 sm:px-8 sm:py-9"
       >
+        <div className="mb-5 inline-flex min-h-11 items-center rounded-full border-2 border-[#2D231E] bg-[#FDE8DC] px-4 text-sm font-bold text-[#9D3D12]">
+          あなたのケア時間の見通し
+        </div>
         {metrics.familyHoursPerWeek > 0 ? (
-          <p className="text-xl sm:text-2xl leading-relaxed text-stone-700 font-medium text-balance">
+          <p className="text-xl font-bold leading-relaxed text-[#2D231E] text-balance sm:text-2xl">
             1週間のうち{' '}
-            <strong className="metric-num text-4xl sm:text-5xl font-bold text-stone-900 align-baseline mx-0.5">
+            <strong className="metric-num mx-1 align-baseline text-5xl font-extrabold text-[#ED6A2C] sm:text-6xl">
               {displayFamilyHours}
             </strong>
-            <span className="text-stone-900 font-bold">時間</span>
+            <span className="font-extrabold text-[#2D231E]">時間</span>
             を、家族が支えています。
           </p>
         ) : (
-          <p className="text-xl sm:text-2xl leading-relaxed text-stone-700 font-medium text-balance">
+          <p className="text-xl font-bold leading-relaxed text-[#2D231E] text-balance sm:text-2xl">
             登録した困りごとは、すべてサービスにまかせられる計算です。
           </p>
         )}
 
         {savedWeeklyHours > 0 ? (
-          <p className="mt-3 text-base sm:text-lg leading-relaxed text-stone-600 text-balance">
+          <div className="mt-6 rounded-[20px] border-2 border-[#2D231E] bg-[#FFF7F2] p-5">
+            <p className="text-base font-medium leading-relaxed text-[#5E514A] text-balance sm:text-lg">
             月{' '}
-            <strong className="text-2xl font-bold text-orange-700 tabular-nums">
+            <strong className="text-2xl font-extrabold text-[#B94716] tabular-nums sm:text-3xl">
               {displaySelfPay.toLocaleString()}
             </strong>{' '}
-            <span className="font-semibold text-orange-700">円</span>
+            <span className="font-bold text-[#B94716]">円</span>
             で、週{' '}
-            <strong className="text-2xl font-bold text-emerald-700 tabular-nums">
+            <strong className="text-2xl font-extrabold text-[#B94716] tabular-nums sm:text-3xl">
               {displaySaved}
             </strong>{' '}
-            <span className="font-semibold text-emerald-700">時間分</span>
+            <span className="font-bold text-[#B94716]">時間分</span>
             をサービスにまかせられます。
-          </p>
+            </p>
+          </div>
         ) : (
-          <p className="mt-3 text-base leading-relaxed text-stone-500">
+          <p className="mt-6 rounded-[20px] border-2 border-[#2D231E] bg-[#FFF7F2] p-5 text-base leading-relaxed text-[#5E514A]">
             いまの条件では、まかせられるサービスが見つかっていません。予算を上げるか、条件を見直してみてください。
           </p>
         )}
 
-        <p className="mt-4 pt-4 border-t border-stone-100 text-[13px] text-stone-500 tabular-nums">
+        <p className="mt-5 border-t-2 border-[#FDE8DC] pt-4 text-sm leading-relaxed text-[#756A64] tabular-nums">
           困りごと {metrics.neededSlotCount} 件のうち {metrics.coveredSlotCount} 件をサービスがカバー
           {remainingSlots > 0 && <>（残り {remainingSlots} 件は家族が担当）</>}
           ・介護保険1割負担＋自費の合計目安
@@ -78,11 +83,11 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ metrics, initialFami
 
       {/* 支給限度基準額超過の注意表示 */}
       {metrics.isLimitExceeded && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-amber-900 text-[13px]">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-[20px] border-2 border-[#B94716] bg-[#FDE8DC] p-4 text-sm text-[#2D231E] sm:p-5">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#B94716]" />
           <div>
             <span className="font-bold">介護保険の支給限度額を超えています</span>
-            <p className="mt-0.5 text-amber-800 leading-relaxed">
+            <p className="mt-1 leading-relaxed text-[#5E514A]">
               上限を超えた分は全額自己負担（10割）として試算しています。ケアマネジャーと相談のうえ、優先度の高いサービスに絞るか、保険外サービスへの置き換えをご検討ください。
             </p>
           </div>

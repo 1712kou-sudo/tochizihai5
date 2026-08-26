@@ -24,6 +24,8 @@ import {
 import { ALL_SERVICES } from '@/data/servicesSeed';
 import { ActiveTab, Header } from '@/components/Header';
 import { InputWizard } from '@/components/InputWizard';
+import { ScrollHero } from '@/components/ScrollHero';
+import { LandingSections } from '@/components/LandingSections';
 import { MetricsCards } from '@/components/MetricsCards';
 import { TimelineGrid } from '@/components/TimelineGrid';
 import { SlotDetailModal } from '@/components/SlotDetailModal';
@@ -32,6 +34,11 @@ import { ShareModal } from '@/components/ShareModal';
 import { PrintView } from '@/components/PrintView';
 import { GovDashboard } from '@/components/GovDashboard';
 import { ServicePlanList } from '@/components/ServicePlanList';
+import { ResultHeader } from '@/components/ResultHeader';
+import { AskSection, HandoffSection } from '@/components/ResultFooterSections';
+import { HandoffView } from '@/components/HandoffView';
+import { ConsultChat, ConsultItem } from '@/components/ConsultChat';
+import { ConsultContext } from '@/utils/consult';
 import { AdminPipeline } from '@/components/AdminPipeline';
 import {
   Service,
@@ -43,10 +50,10 @@ import {
   optimizeTimeline,
   calculateMetrics,
 } from '@/utils/timelineEngine';
-import { Share2, Printer, Edit3, HelpCircle } from 'lucide-react';
+import { Share2, Printer, Edit3, HelpCircle, Clock3, ArrowRight } from 'lucide-react';
 
 /** 入力条件と予算から、サービスを当てはめ済みのタイムラインを組み立てる */
-function buildOptimizedSlots(input: UserInputData, budget: number, allServices: Service[]): TimelineSlot[] {
+function buildOptimizedSlots(input: UserInputData, budget: number, allServices: Service[] = ALL_SERVICES): TimelineSlot[] {
   const base = generateInitialTimeline(input);
   return optimizeTimeline(
     base,
@@ -74,6 +81,16 @@ export default function HomePage() {
   const [monthlyBudget, setMonthlyBudget] = useState<number>(userInput.monthlyBudget);
   const [activeSlot, setActiveSlot] = useState<TimelineSlot | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  // 送る画面（ケアマネジャーがリンクを開いたときの見え方）
+  const [isHandoffOpen, setIsHandoffOpen] = useState<boolean>(false);
+
+  // 相談パネル
+  const [consult, setConsult] = useState<{ open: boolean; ctx: ConsultContext | null; seed: string }>(
+    { open: false, ctx: null, seed: '' }
+  );
+  const [consultItems, setConsultItems] = useState<ConsultItem[]>([]);
+  const openConsult = (ctx: ConsultContext | null, seed = '') =>
+    setConsult({ open: true, ctx, seed });
 
   // 初期スロット（Before状態）
   const initialSlots = useMemo(() => {
@@ -245,27 +262,6 @@ export default function HomePage() {
     setCurrentSlots(buildOptimizedSlots(newData, newData.monthlyBudget, services));
   };
 
-  // 共有URLからの状態復元
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('data');
-    if (!encoded) return;
-    try {
-      const payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
-      if (payload.userInput && typeof payload.monthlyBudget === 'number') {
-        setUserInput(payload.userInput);
-        setMonthlyBudget(payload.monthlyBudget);
-        setHasStarted(true);
-        setCurrentSlots(buildOptimizedSlots(payload.userInput, payload.monthlyBudget, ALL_SERVICES));
-      }
-    } catch {
-      // 無効なデータは無視
-    }
-  // 初回マウント時のみ実行
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // ランディングの登場シーケンス（ファーストビューなので即時発火）
   const landing = useReveal<HTMLElement>({ immediate: true });
 
@@ -281,8 +277,25 @@ export default function HomePage() {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         onHome={() => {
+          // ロゴはランディングへ戻る入口。開いているものを全部閉じて先頭から見せる。
           setActiveTab('timeline');
           setIsWizardOpen(false);
+          setIsHandoffOpen(false);
+          setConsult((c) => ({ ...c, open: false }));
+          setActiveSlot(null);
+          setHasStarted(false);
+          window.scrollTo(0, 0);
+        }}
+        showResultActions={activeTab === 'timeline' && hasStarted && !isWizardOpen}
+        showStart={activeTab === 'timeline' && !hasStarted && !isWizardOpen && !isHandoffOpen}
+        onStart={() => {
+          setIsWizardOpen(true);
+          window.scrollTo(0, 0);
+        }}
+        onEditConditions={() => setIsWizardOpen(true)}
+        onHandoff={() => {
+          setIsHandoffOpen(true);
+          window.scrollTo(0, 0);
         }}
       />
 
@@ -295,8 +308,35 @@ export default function HomePage() {
       />
 
       {/* メインコンテンツ */}
-      <main className="flex-1 pb-16 no-print">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+      <main className="flex-1 no-print">
+        {/* 送る画面：開いている間はこれだけを見せる */}
+        {isHandoffOpen && (
+          <HandoffView
+            userInput={userInput}
+            slots={currentSlots}
+            metrics={currentMetrics}
+            initialFamilyHours={initialFamilyHours}
+            consultItems={consultItems}
+            onBack={() => setIsHandoffOpen(false)}
+            onPrint={handlePrint}
+          />
+        )}
+
+        {/* ランディングは全画面幅が必要なので、max-w コンテナの外に置く */}
+        {!isHandoffOpen && activeTab === 'timeline' && !isWizardOpen && !hasStarted && (
+          <>
+            <ScrollHero
+              onStart={() => setIsWizardOpen(true)}
+              onLoadDemo={handleLoadDemo}
+            />
+            <LandingSections onStart={() => setIsWizardOpen(true)} />
+          </>
+        )}
+
+        <div
+          className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16 space-y-6"
+          hidden={isHandoffOpen}
+        >
           {/* タブ1: タイムライン画面 */}
           {activeTab === 'timeline' && (
             <div className="space-y-5">
@@ -306,201 +346,67 @@ export default function HomePage() {
                   onSubmit={handleWizardSubmit}
                   onLoadDemo={handleLoadDemo}
                 />
-              ) : !hasStarted ? (
-                /* ---------------- ランディング（初回訪問） ---------------- */
-                <section
-                  {...landing.containerProps}
-                  className={`max-w-2xl mx-auto text-center pt-14 sm:pt-20 pb-10 ${landing.containerProps.className ?? ''}`}
-                >
-                  <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 leading-snug">
-                    <span
-                      {...landing.item(0)}
-                      className={`inline-block ${landing.item(0).className}`}
-                      style={{ ...landing.item(0).style, ['--rv-y' as string]: '16px', ['--rv-blur' as string]: '2.5px', ['--rv-delay' as string]: '120ms' }}
-                    >
-                      介護に使っている時間、
-                    </span>
-                    <span
-                      {...landing.item(1)}
-                      className={`inline-block ${landing.item(1).className}`}
-                      style={{ ...landing.item(1).style, ['--rv-y' as string]: '16px', ['--rv-blur' as string]: '2.5px', ['--rv-delay' as string]: '120ms', ['--rv-step' as string]: '80ms' }}
-                    >
-                      数えたことはありますか？
-                    </span>
-                  </h1>
-                  <p
-                    {...landing.item(4)}
-                    className={`mt-5 text-base sm:text-lg text-stone-600 leading-relaxed text-balance ${landing.item(4).className}`}
-                    style={{ ...landing.item(4).style, ['--rv-y' as string]: '10px', ['--rv-delay' as string]: '120ms', ['--rv-step' as string]: '70ms' }}
-                  >
-                    要介護度と困りごとを入れるだけで、1週間の介護タイムラインを作成。
-                    介護保険で足りない部分を埋める地域のサービスと、その料金がわかります。
-                  </p>
-
-                  <div
-                    {...landing.item(6)}
-                    className={`mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 ${landing.item(6).className}`}
-                    style={{ ...landing.item(6).style, ['--rv-y' as string]: '10px', ['--rv-delay' as string]: '120ms', ['--rv-step' as string]: '70ms' }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setIsWizardOpen(true)}
-                      className="press lift w-full sm:w-auto px-8 h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-base transition-colors"
-                    >
-                      はじめる（約1分）
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLoadDemo}
-                      className="press w-full sm:w-auto px-8 h-12 rounded-xl border border-stone-300 hover:glass text-stone-700 font-semibold text-base transition-colors"
-                    >
-                      入力例で見てみる
-                    </button>
-                  </div>
-
-                  <ol className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
-                    {[
-                      { n: '1', t: '状況を入力', d: '要介護度・世帯・困りごとを選ぶだけ。約1分で終わります。' },
-                      { n: '2', t: 'タイムラインが完成', d: '1週間28マスで「誰がいつ支えているか」が見えます。' },
-                      { n: '3', t: 'サービスと料金を確認', d: '予算内で任せられるサービスと月額がその場でわかります。' },
-                    ].map((step) => (
-                      <li
-                        key={step.n}
-                        {...landing.item(5 + Number(step.n))}
-                        className={`flex gap-3 ${landing.item(0).className}`}
-                        style={{ ...landing.item(5 + Number(step.n)).style, ['--rv-y' as string]: '10px', ['--rv-delay' as string]: '120ms', ['--rv-step' as string]: '80ms' }}
-                      >
-                        <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 font-bold text-sm flex items-center justify-center shrink-0 mt-0.5">
-                          {step.n}
-                        </span>
-                        <div>
-                          <div className="font-bold text-sm text-stone-900">{step.t}</div>
-                          <p className="mt-1 text-[13px] text-stone-500 leading-relaxed">{step.d}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </section>
-              ) : (
+              ) : !hasStarted ? null : (
                 <>
-                  {/* 結論サマリー（最初に答えを見せる） */}
-                  <MetricsCards
+                  {/* 条件 ＋ 結論 ＋ 予算 */}
+                  <ResultHeader
+                    conditionLine={`${CARE_LEVEL_LIMITS[userInput.careLevel].name}・${
+                      userInput.householdType === 'living_together'
+                        ? '同居家族あり'
+                        : userInput.householdType === 'single'
+                        ? '独居'
+                        : userInput.householdType === 'elderly_only'
+                        ? '高齢者のみ世帯'
+                        : '遠距離介護'
+                    }`}
                     metrics={currentMetrics}
                     initialFamilyHours={initialFamilyHours}
+                    monthlyBudget={monthlyBudget}
+                    recommendedBudget={userInput.monthlyBudget}
+                    onBudgetChange={handleBudgetChange}
+                    onResetBudget={handleResetAssignments}
                   />
 
-                  {/* 条件と予算（コンパクトな1枚） */}
-                  <div className="glass rounded-2xl border border-stone-200 px-5 sm:px-6 py-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-sm text-stone-600 min-w-0">
-                        <span className="font-bold text-stone-900">
-                          {CARE_LEVEL_LIMITS[userInput.careLevel].name}
-                        </span>
-                        <span className="mx-1.5 text-stone-300">・</span>
-                        <span className="font-bold text-stone-900">
-                          {userInput.householdType === 'living_together' && '同居家族あり'}
-                          {userInput.householdType === 'single' && '独居'}
-                          {userInput.householdType === 'elderly_only' && '高齢者のみ世帯'}
-                          {userInput.householdType === 'long_distance' && '遠距離介護'}
-                        </span>
-                        <span className="mx-1.5 text-stone-300">・</span>
-                        <span className="tabular-nums">
-                          困りごと <span className="font-bold text-stone-900">{userInput.selectedNeeds.length}</span> 件
-                        </span>
-                      </p>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setIsShareModalOpen(true)}
-                          aria-label="共有リンクを発行"
-                          title="共有"
-                          className="w-10 h-10 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 flex items-center justify-center transition-colors"
-                        >
-                          <Share2 className="w-4.5 h-4.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handlePrint}
-                          aria-label="A4で印刷"
-                          title="印刷"
-                          className="w-10 h-10 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 flex items-center justify-center transition-colors"
-                        >
-                          <Printer className="w-4.5 h-4.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsWizardOpen(true)}
-                          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold transition-colors"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                          条件を変更
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 予算 */}
-                    <div className="mt-4 pt-4 border-t border-stone-100">
-                      <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                        <label htmlFor="budget-range" className="micro-label">
-                          月の予算 —— 動かすと組み合わせを作り直します
-                        </label>
-                        <div className="flex items-baseline gap-3 shrink-0">
-                          <span
-                            className="tint metric-num text-lg font-bold text-stone-900"
-                            data-live={isBudgetLive ? 'true' : 'false'}
-                          >
-                            ¥{monthlyBudget.toLocaleString()}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={handleResetAssignments}
-                            className="text-[12px] text-stone-400 hover:text-orange-700 underline underline-offset-2"
-                          >
-                            おすすめに戻す
-                          </button>
-                        </div>
-                      </div>
-
-                      <input
-                        id="budget-range"
-                        type="range"
-                        min="0"
-                        max="200000"
-                        step="5000"
-                        value={monthlyBudget}
-                        onChange={(e) => handleBudgetChange(Number(e.target.value))}
-                        style={{ '--range-progress': `${(monthlyBudget / 200000) * 100}%` } as React.CSSProperties}
-                        className="w-full h-6 cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[11px] text-stone-400 tabular-nums mt-1">
-                        <span>0円</span>
-                        <span>5万</span>
-                        <span>10万</span>
-                        <span>15万</span>
-                        <span>20万</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 28スロット週次ケアタイムライン */}
+                  {/* 1週間の担い手 */}
                   <TimelineGrid
                     slots={currentSlots}
                     onSlotClick={(slot) => setActiveSlot(slot)}
                     isLive={isBudgetLive}
                   />
 
-                  {/* このプランで使うサービスの一覧 */}
+                  {/* わからないことを聞く（サービス一覧の手前に置く） */}
+                  <AskSection
+                    onAsk={(q) => openConsult(null, q)}
+                    items={consultItems}
+                    onRemoveItem={(id) =>
+                      setConsultItems((list) => list.filter((it) => it.id !== id))
+                    }
+                  />
+
+                  {/* 頼むサービス */}
                   <ServicePlanList
                     slots={currentSlots}
                     onSelectSlot={(slot) => setActiveSlot(slot)}
+                    onAskService={(serviceId, serviceName) =>
+                      openConsult({ serviceId, label: serviceName })
+                    }
                   />
 
-                  {/* 境界説明ガイド */}
+                  {/* 確認すること（面談で聞くべき点） */}
                   <RestrictionGuide
                     selectedNeedIds={userInput.selectedNeeds}
                     householdType={userInput.householdType}
                     careLevel={userInput.careLevel}
+                    slots={currentSlots}
+                  />
+
+                  {/* ケアマネジャーへ渡す */}
+                  <HandoffSection
+                    onShare={() => {
+                      setIsHandoffOpen(true);
+                      window.scrollTo(0, 0);
+                    }}
+                    onPrint={handlePrint}
                   />
                 </>
               )}
@@ -508,7 +414,7 @@ export default function HomePage() {
           )}
 
           {/* タブ2: 自治体ダッシュボード */}
-          {activeTab === 'gov' && <GovDashboard services={services} />}
+          {activeTab === 'gov' && <GovDashboard />}
 
           {/* タブ3: AI収集＆承認管理 */}
           {activeTab === 'admin' && (
@@ -533,26 +439,37 @@ export default function HomePage() {
         onChangeNeed={handleChangeNeedForSlot}
       />
 
+      {/* 相談パネル（自由に書いて聞く） */}
+      <ConsultChat
+        isOpen={consult.open}
+        context={consult.ctx}
+        seedQuestion={consult.seed}
+        userInput={userInput}
+        slots={currentSlots}
+        metrics={currentMetrics}
+        budget={monthlyBudget}
+        onClose={() => setConsult((c) => ({ ...c, open: false }))}
+        onSaveItem={(item) => setConsultItems((list) => [...list, item])}
+      />
+
       {/* 共有モーダル */}
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        userInput={userInput}
-        monthlyBudget={monthlyBudget}
       />
 
       {/* 免責事項・フッター（全画面共通） */}
-      <footer className="glass border-t border-stone-200 py-6 px-4 text-center text-xs text-stone-500 space-y-2 no-print">
+      <footer className="bg-stone-50 border-t-2 border-stone-900 py-8 px-4 text-center text-sm text-stone-600 space-y-3 no-print">
         <div className="max-w-4xl mx-auto flex items-center justify-center space-x-2 text-stone-600 font-semibold">
           <HelpCircle className="w-4 h-4 text-orange-600" />
           <span>免責事項 ＆ 掲載基準について</span>
         </div>
-        <p className="max-w-3xl mx-auto leading-relaxed text-stone-400 text-[11px]">
+        <p className="max-w-3xl mx-auto leading-relaxed text-stone-500 text-[13px]">
           本システムで試算される金額・介護保険給付・サービス利用可否は目安であり、個別の所得状況や身体状況により異なります。
           実際のケアプラン作成や利用にあたっては、必ず担当ケアマネジャー、地域包括支援センター、または各提供事業者にご相談ください。
           掲載されているサービス情報は、広告費や掲載料による順位優遇を行わない公平な基準でAI構造化および人手承認を行っています。
         </p>
-        <div className="pt-2 text-[11px] text-stone-400">
+        <div className="pt-2 text-[13px] text-stone-500">
           © 2026 けあしる - 介護の「見えない時間」可視化 × 保険外サービス横断検索
         </div>
       </footer>

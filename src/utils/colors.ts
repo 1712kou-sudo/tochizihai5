@@ -16,52 +16,62 @@ export interface SlotColorConfig {
   borderHex: string;
   badgeClass: string;
   cardClass: string;
+  filterIdleClass: string;
+  filterSelectedClass: string;
   description: string;
 }
 
 export const SLOT_COLORS: Record<SlotState, SlotColorConfig> = {
   family: {
     state: 'family',
-    label: '家族が担っている',
+    label: '家族が担う',
     shortLabel: '家族',
-    bgHex: '#FCEBEB',
-    textHex: '#791F1F',
-    borderHex: '#F7C5C5',
-    badgeClass: 'bg-[#FCEBEB] text-[#791F1F] border-[#F7C5C5]',
-    cardClass: 'bg-[#FCEBEB] text-[#791F1F] border-[#F7C5C5] hover:border-[#E89999]',
+    bgHex: '#F0E7E0',
+    textHex: '#5E4536',
+    borderHex: '#BFA795',
+    badgeClass: 'bg-[#F0E7E0] text-[#5E4536] border-[#BFA795]',
+    cardClass: 'bg-[#F0E7E0] text-[#5E4536] border-[#BFA795] hover:bg-[#E6D9CF]',
+    filterIdleClass: 'border-[#BFA795] bg-[#F0E7E0] text-[#5E4536] hover:bg-[#E6D9CF]',
+    filterSelectedClass: 'border-[#2D231E] bg-[#8A7059] text-white shadow-[0_3px_0_#2D231E]',
     description: '家族が自力で抱えている時間（見えない介護負担）',
   },
   insurance: {
     state: 'insurance',
-    label: '介護保険給付・総合事業',
-    shortLabel: '保険内',
-    bgHex: '#E1F5EE',
-    textHex: '#085041',
-    borderHex: '#B5EAD7',
-    badgeClass: 'bg-[#E1F5EE] text-[#085041] border-[#B5EAD7]',
-    cardClass: 'bg-[#E1F5EE] text-[#085041] border-[#B5EAD7] hover:border-[#83D5BA]',
+    label: '保険・公的',
+    shortLabel: '保険',
+    bgHex: '#C9DDEE',
+    textHex: '#183F66',
+    borderHex: '#5E8CB4',
+    badgeClass: 'bg-[#C9DDEE] text-[#183F66] border-[#5E8CB4]',
+    cardClass: 'bg-[#C9DDEE] text-[#183F66] border-[#5E8CB4] hover:bg-[#B9D2E8]',
+    filterIdleClass: 'border-[#5E8CB4] bg-[#C9DDEE] text-[#183F66] hover:bg-[#B9D2E8]',
+    filterSelectedClass: 'border-[#2D231E] bg-[#3F6E97] text-white shadow-[0_3px_0_#2D231E]',
     description: '1〜3割負担で利用できる公的給付・総合事業サービス',
   },
   paid: {
     state: 'paid',
-    label: '保険外（自治体・民間・互助）',
+    label: '保険外',
     shortLabel: '保険外',
-    bgHex: '#FFF1E3',
-    textHex: '#9A3412',
-    borderHex: '#FBD3AE',
-    badgeClass: 'bg-[#FFF1E3] text-[#9A3412] border-[#FBD3AE]',
-    cardClass: 'bg-[#FFF1E3] text-[#9A3412] border-[#FBD3AE] hover:border-[#F0A868]',
+    bgHex: '#FFDDBB',
+    textHex: '#7B3A0B',
+    borderHex: '#ED6A2C',
+    badgeClass: 'bg-[#FFDDBB] text-[#7B3A0B] border-[#ED6A2C]',
+    cardClass: 'bg-[#FFDDBB] text-[#7B3A0B] border-[#ED6A2C] hover:bg-[#FFD0A4]',
+    filterIdleClass: 'border-[#ED6A2C] bg-[#FFDDBB] text-[#7B3A0B] hover:bg-[#FFD0A4]',
+    filterSelectedClass: 'border-[#2D231E] bg-[#C4511A] text-white shadow-[0_3px_0_#2D231E]',
     description: '自治体上乗せ施策・シルバー人材・民間自費・地域互助サービス',
   },
   none: {
     state: 'none',
-    label: '予定なし / リスク枠',
+    label: '予定なし',
     shortLabel: 'なし',
-    bgHex: '#F3F4F6',
-    textHex: '#6B7280',
-    borderHex: '#E5E7EB',
-    badgeClass: 'bg-gray-100 text-gray-600 border-gray-200',
-    cardClass: 'bg-gray-50/70 text-gray-400 border-dashed border-gray-200 hover:border-gray-300',
+    bgHex: '#FAF7F4',
+    textHex: '#9A9089',
+    borderHex: '#DCCFC4',
+    badgeClass: 'bg-[#FAF7F4] text-[#9A9089] border-dashed border-[#DCCFC4]',
+    cardClass: 'bg-[#FAF7F4] text-[#9A9089] border-dashed border-[#DCCFC4] hover:bg-[#F2EDE8]',
+    filterIdleClass: 'border-dashed border-[#DCCFC4] bg-[#FAF7F4] text-[#9A9089] hover:bg-[#F2EDE8]',
+    filterSelectedClass: 'border-[#2D231E] bg-[#8A7F76] text-white shadow-[0_3px_0_#2D231E]',
     description: '困りごとが登録されていない、または対応者不在の枠',
   },
 };
@@ -72,22 +82,22 @@ export const SLOT_COLORS: Record<SlotState, SlotColorConfig> = {
 export const SCHEME_LABELS: Record<ServiceScheme, { label: string; badgeColor: string }> = {
   insurance: {
     label: '介護保険給付',
-    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    badgeColor: 'bg-[#E4EDF4] text-[#1F4A73] border-[#5E8CB4]',
   },
   sogo_jigyo: {
     label: '総合事業',
-    badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    badgeColor: 'bg-[#E4EDF4] text-[#1F4A73] border-[#5E8CB4]',
   },
   municipal_extra: {
-    label: '自治体上乗せ施策',
-    badgeColor: 'bg-amber-100 text-amber-800 border-amber-300',
+    label: '自治体施策',
+    badgeColor: 'bg-[#FDE8DC] text-[#8A3D07] border-[#ED6A2C]',
   },
   private_paid: {
-    label: '民間自費サービス',
-    badgeColor: 'bg-orange-100 text-orange-800 border-orange-300',
+    label: '民間自費',
+    badgeColor: 'bg-[#FFDDBB] text-[#7B3A0B] border-[#ED6A2C]',
   },
   mutual_aid: {
     label: '地域互助・NPO',
-    badgeColor: 'bg-sky-100 text-sky-800 border-sky-300',
+    badgeColor: 'bg-[#FFDDBB] text-[#7B3A0B] border-[#ED6A2C]',
   },
 };

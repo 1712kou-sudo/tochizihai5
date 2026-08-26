@@ -1,41 +1,23 @@
 /**
- * 5ステップ入力ウィザード コンポーネント
+ * 入力ウィザード（3ステップ）
  *
- * 1. 要介護認定区分（未申請／要支援／要介護をグループ化して選択）
- * 2. 世帯状況
- * 3. 困りごと（ケアの種類ごとにグループ化したタグ選択）
- * 4. 発生する曜日・時間帯
- * 5. 月額予算
+ * 1. ご本人のこと   … 要介護認定の区分 ＋ 世帯
+ * 2. 困っていること … ケアの種類ごとにまとめたタグ選択
+ * 3. 月に出せる金額 … 上限スライダー ＋ 相場の目安
+ *
+ * 曜日・時間帯は選んだ内容から自動で埋め、次のタイムライン画面の
+ * マス目から直せるようにしている（デザイン仕様に合わせた構成）。
  */
 
 'use client';
 
 import React, { useState } from 'react';
-import {
-  CARE_LEVEL_LIMITS,
-  DAYS_OF_WEEK,
-  NEEDS_TAGS,
-  TIME_PERIODS,
-} from '@/constants/careConstants';
-import {
-  CareLevel,
-  DayOfWeek,
-  HouseholdType,
-  NeedsCategory,
-  SlotId,
-  TimePeriod,
-  UserInputData,
-} from '@/types';
-import {
-  Check,
-  ChevronRight,
-  ChevronLeft,
-  Home,
-  UserCheck,
-  Users,
-  MapPin,
-  CalendarDays,
-} from 'lucide-react';
+import { CARE_LEVEL_LIMITS, DAYS_OF_WEEK, NEEDS_TAGS, TIME_PERIODS } from '@/constants/careConstants';
+import { CareLevel, DayOfWeek, HouseholdType, NeedsCategory, SlotId, UserInputData } from '@/types';
+
+const INK = '#2D231E';
+const PRIMARY = '#C4511A';
+const SUB = '#6E625B';
 
 interface InputWizardProps {
   initialData: UserInputData;
@@ -43,15 +25,12 @@ interface InputWizardProps {
   onLoadDemo: () => void;
 }
 
-/** 認定区分を3グループに整理して表示（支給限度額などの詳細は出さない） */
-const CARE_LEVEL_GROUPS: { label: string; note?: string; levels: CareLevel[] }[] = [
-  { label: '認定を受けていない', levels: ['unapplied', 'unknown'] },
-  { label: '要支援', note: '1〜2', levels: ['support_1', 'support_2'] },
-  { label: '要介護', note: '1〜5', levels: ['care_1', 'care_2', 'care_3', 'care_4', 'care_5'] },
+/* ---------- 選択肢 ---------- */
+const CARE_ORDER: CareLevel[] = [
+  'unapplied', 'unknown', 'support_1', 'support_2',
+  'care_1', 'care_2', 'care_3', 'care_4', 'care_5',
 ];
-
-/** 認定区分ボタンに出す短いラベル */
-const CARE_LEVEL_SHORT: Record<CareLevel, string> = {
+const CARE_SHORT: Record<CareLevel, string> = {
   unapplied: 'まだ申請していない',
   unknown: '区分がわからない',
   support_1: '要支援1',
@@ -63,34 +42,13 @@ const CARE_LEVEL_SHORT: Record<CareLevel, string> = {
   care_5: '要介護5',
 };
 
-const HOUSEHOLDS: { id: HouseholdType; title: string; desc: string; icon: React.ElementType }[] = [
-  {
-    id: 'single',
-    title: '独居（一人暮らし）',
-    desc: '日中の安否確認・配食・見守りが最優先になります。',
-    icon: UserCheck,
-  },
-  {
-    id: 'elderly_only',
-    title: '高齢者のみ世帯',
-    desc: '重い家事や通院、夜間の見守りを外部に頼る必要があります。',
-    icon: Users,
-  },
-  {
-    id: 'living_together',
-    title: '同居家族あり',
-    desc: '保険の生活援助に制限があるため、保険外サービスの併用が有効です。',
-    icon: Home,
-  },
-  {
-    id: 'long_distance',
-    title: '遠距離介護',
-    desc: '遠隔の見守り、緊急駆けつけ、訪問代行が中心になります。',
-    icon: MapPin,
-  },
+const HOUSEHOLDS: { id: HouseholdType; title: string; desc: string }[] = [
+  { id: 'single', title: '独居（一人暮らし）', desc: '日中の安否確認・配食・見守りが最優先になります。' },
+  { id: 'elderly_only', title: '高齢者のみ世帯', desc: '重い家事や通院、夜間の見守りを外部に頼る必要があります。' },
+  { id: 'living_together', title: '同居家族あり', desc: '保険の生活援助に制限があるため、保険外サービスの併用が有効です。' },
+  { id: 'long_distance', title: '遠距離介護', desc: '遠隔の見守り、緊急駆けつけ、訪問代行が中心になります。' },
 ];
 
-/** ケアの種類ごとのグループ見出し */
 const NEEDS_CATEGORIES: { key: NeedsCategory; label: string; hint: string }[] = [
   { key: 'housework', label: '家事', hint: '調理・掃除・洗濯・買い物' },
   { key: 'physical_care', label: '身体介護', hint: '入浴・排泄・服薬・着替え' },
@@ -101,615 +59,301 @@ const NEEDS_CATEGORIES: { key: NeedsCategory; label: string; hint: string }[] = 
   { key: 'family_rest', label: '家族の休息', hint: 'レスパイト・相談' },
 ];
 
-/** タスク1件あたりの発生タイミング */
-interface TaskTiming {
-  days: DayOfWeek[];
-  periods: TimePeriod[];
-}
-type TaskSchedule = Record<string, TaskTiming>;
+/** 金額を決める前に見せる相場 */
+const MARKET_RATES = [
+  { label: 'ボランティアのゴミ出し・声かけ', price: '無料' },
+  { label: '区の配食サービス（安否確認つき）', price: '1食 500円' },
+  { label: 'シルバー人材センターの家事援助', price: '1時間 1,350円' },
+  { label: '見守りセンサー（セコム）', price: '月 4,950円' },
+  { label: '夜間の宿泊見守り', price: '1泊 18,000円' },
+];
+
+const STEP_TITLES = ['ご本人のこと', '困っていること', '月に出せる金額'];
+const STEP_HELPS = [
+  '介護認定の区分と世帯の状況で、使える制度が変わります。',
+  '負担に感じていることを選んでください。いくつでも選べます。',
+  '上限を決めると、安いものから順に組み合わせます。あとから何度でも変えられます。',
+];
 
 const WEEKDAYS: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri'];
-const WEEKEND: DayOfWeek[] = ['sat', 'sun'];
-const ALL_DAYS: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
-/** 既存の slotNeeds から、タスクごとの曜日・時間帯を復元する */
-function scheduleFromSlotNeeds(
-  selectedNeeds: string[],
-  slotNeeds: Record<string, string | null>
-): TaskSchedule {
-  const out: TaskSchedule = {};
-  for (const needId of selectedNeeds) {
-    const days = new Set<DayOfWeek>();
-    const periods = new Set<TimePeriod>();
-    for (const [slotId, value] of Object.entries(slotNeeds)) {
-      if (value !== needId) continue;
-      const [d, p] = slotId.split('-') as [DayOfWeek, TimePeriod];
-      days.add(d);
-      periods.add(p);
-    }
-    // 未設定のタスクは、タグの既定時間帯を平日に置く
-    if (days.size === 0 || periods.size === 0) {
-      const tag = NEEDS_TAGS.find((t) => t.id === needId);
-      out[needId] = { days: [], periods: tag ? [...tag.defaultSlots] : [] };
-    } else {
-      out[needId] = { days: [...days], periods: [...periods] };
-    }
-  }
-  return out;
-}
-
-/**
- * タスクごとの「曜日 × 時間帯」を28マスへ展開する。
- * selectedNeeds の順に書き込むため、同じマスが重なった場合は後のタスクが優先される。
- */
-function scheduleToSlotNeeds(
-  selectedNeeds: string[],
-  schedule: TaskSchedule
-): Record<SlotId, string | null> {
+/** 選んだ困りごとを、既定の時間帯（平日）へ自動で配置する */
+function autoFillSlots(selectedNeeds: string[]): Record<SlotId, string | null> {
   const out = {} as Record<SlotId, string | null>;
   for (const d of DAYS_OF_WEEK) {
-    for (const p of TIME_PERIODS) {
-      out[`${d.key}-${p.key}`] = null;
-    }
+    for (const p of TIME_PERIODS) out[`${d.key}-${p.key}`] = null;
   }
   for (const needId of selectedNeeds) {
-    const timing = schedule[needId];
-    if (!timing) continue;
-    for (const day of timing.days) {
-      for (const period of timing.periods) {
-        out[`${day}-${period}`] = needId;
+    const tag = NEEDS_TAGS.find((t) => t.id === needId);
+    if (!tag) continue;
+    for (const day of WEEKDAYS) {
+      for (const period of tag.defaultSlots) {
+        const slotId: SlotId = `${day}-${period}`;
+        if (!out[slotId]) out[slotId] = needId;
       }
     }
   }
   return out;
 }
 
-export const InputWizard: React.FC<InputWizardProps> = ({
-  initialData,
-  onSubmit,
-  onLoadDemo,
-}) => {
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  // 前進か後退かで、切り替わる向きを変える
-  const [direction, setDirection] = useState<'fwd' | 'back'>('fwd');
+export const InputWizard: React.FC<InputWizardProps> = ({ initialData, onSubmit, onLoadDemo }) => {
+  const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<UserInputData>(initialData);
-  // タスクごとの発生タイミング（ステップ4の入力源）
-  const [schedule, setSchedule] = useState<TaskSchedule>(() =>
-    scheduleFromSlotNeeds(initialData.selectedNeeds, initialData.slotNeeds)
-  );
 
-  /** スケジュールを更新し、28マスへ展開して formData に反映する */
-  const applySchedule = (next: TaskSchedule, needsOrder?: string[]) => {
-    setSchedule(next);
+  const setCareLevel = (level: CareLevel) => setFormData((p) => ({ ...p, careLevel: level }));
+  const setHousehold = (type: HouseholdType) => setFormData((p) => ({ ...p, householdType: type }));
+  const setBudget = (budget: number) => setFormData((p) => ({ ...p, monthlyBudget: budget }));
+
+  const toggleNeed = (needId: string) => {
     setFormData((prev) => {
-      const order = needsOrder ?? prev.selectedNeeds;
-      return { ...prev, slotNeeds: scheduleToSlotNeeds(order, next) };
+      const next = prev.selectedNeeds.includes(needId)
+        ? prev.selectedNeeds.filter((id) => id !== needId)
+        : [...prev.selectedNeeds, needId];
+      return { ...prev, selectedNeeds: next, slotNeeds: autoFillSlots(next) };
     });
   };
 
-  const toggleTaskDay = (needId: string, day: DayOfWeek) => {
-    const cur = schedule[needId] ?? { days: [], periods: [] };
-    const days = cur.days.includes(day)
-      ? cur.days.filter((d) => d !== day)
-      : [...cur.days, day];
-    applySchedule({ ...schedule, [needId]: { ...cur, days } });
-  };
+  const next = () => (step < 3 ? setStep(step + 1) : onSubmit(formData));
+  const prev = () => step > 1 && setStep(step - 1);
 
-  const setTaskDays = (needId: string, days: DayOfWeek[]) => {
-    const cur = schedule[needId] ?? { days: [], periods: [] };
-    const same =
-      cur.days.length === days.length && days.every((d) => cur.days.includes(d));
-    applySchedule({ ...schedule, [needId]: { ...cur, days: same ? [] : days } });
-  };
+  const pill = (on: boolean): React.CSSProperties => ({
+    minHeight: 48,
+    padding: '0 18px',
+    borderRadius: 999,
+    border: `2px solid ${INK}`,
+    background: on ? PRIMARY : '#fff',
+    color: on ? '#fff' : INK,
+    fontSize: 15,
+    fontWeight: 700,
+    transition: 'background-color .2s ease, color .2s ease',
+  });
 
-  const toggleTaskPeriod = (needId: string, period: TimePeriod) => {
-    const cur = schedule[needId] ?? { days: [], periods: [] };
-    const periods = cur.periods.includes(period)
-      ? cur.periods.filter((p) => p !== period)
-      : [...cur.periods, period];
-    applySchedule({ ...schedule, [needId]: { ...cur, periods } });
-  };
-
-  const handleCareLevelChange = (level: CareLevel) => {
-    setFormData((prev) => ({ ...prev, careLevel: level }));
-  };
-
-  const handleHouseholdChange = (type: HouseholdType) => {
-    setFormData((prev) => ({ ...prev, householdType: type }));
-  };
-
-  /** ニーズのトグル。追加時は既定の時間帯を平日に置き、外したら予定も消す */
-  const toggleNeed = (needId: string) => {
-    const exists = formData.selectedNeeds.includes(needId);
-    const newNeeds = exists
-      ? formData.selectedNeeds.filter((id) => id !== needId)
-      : [...formData.selectedNeeds, needId];
-
-    const nextSchedule = { ...schedule };
-    if (exists) {
-      delete nextSchedule[needId];
-    } else {
-      const tag = NEEDS_TAGS.find((t) => t.id === needId);
-      nextSchedule[needId] = {
-        days: [...WEEKDAYS],
-        periods: tag ? [...tag.defaultSlots] : ['daytime'],
-      };
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      selectedNeeds: newNeeds,
-      slotNeeds: scheduleToSlotNeeds(newNeeds, nextSchedule),
-    }));
-    setSchedule(nextSchedule);
-  };
-
-  const handleBudgetChange = (budget: number) => {
-    setFormData((prev) => ({ ...prev, monthlyBudget: budget }));
-  };
-
-  const nextStep = () => {
-    if (currentStep < 5) {
-      setDirection('fwd');
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      onSubmit(formData);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setDirection('back');
-      setCurrentStep((prev) => prev - 1);
-    }
-  };
-
-  const STEP_TITLES = [
-    '要介護認定の区分',
-    'ご本人の世帯状況',
-    '困っていること',
-    '発生する曜日・時間帯',
-    '月に出せる金額',
-  ];
+  const note = (bg: string): React.CSSProperties => ({
+    marginTop: 16,
+    padding: '16px 18px',
+    borderRadius: 8,
+    background: bg,
+    fontSize: 14,
+    lineHeight: 1.9,
+    color: '#4A413A',
+  });
 
   return (
-    <div className="glass rounded-xl border border-stone-200 overflow-hidden max-w-3xl mx-auto my-6">
-      {/* ヘッダー */}
-      <div className="px-6 py-5 border-b border-stone-200">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <span className="text-xs font-semibold text-orange-700 tracking-wide">
-              ステップ {currentStep} / 5
-            </span>
-            <h2 key={currentStep} className="text-xl font-bold mt-0.5 text-stone-900 swap swap-tight">
-              {STEP_TITLES[currentStep - 1]}
-            </h2>
-          </div>
-          <button
-            onClick={onLoadDemo}
-            type="button"
-            className="shrink-0 px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 text-xs font-medium transition-colors"
-          >
-            入力例を読み込む
-          </button>
-        </div>
-
-        {/* ステップ進捗（5分割セグメント） */}
-        <div
-          className="flex gap-1.5 mt-4"
-          role="progressbar"
-          aria-valuemin={1}
-          aria-valuemax={5}
-          aria-valuenow={currentStep}
-          aria-label={`ステップ ${currentStep} / 5`}
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      {/* 入力例の読み込み */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+        <button
+          type="button"
+          onClick={onLoadDemo}
+          style={{ fontSize: 14, fontWeight: 700, color: '#B04512', textDecoration: 'underline', textUnderlineOffset: 4 }}
         >
-          {[1, 2, 3, 4, 5].map((step) => (
-            <div
-              key={step}
-              className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                step <= currentStep ? 'bg-orange-600' : 'bg-stone-200'
-              }`}
-            />
-          ))}
-        </div>
+          入力例を読み込む
+        </button>
       </div>
 
-      <div
-        key={currentStep}
-        className={`p-6 sm:p-7 min-h-[360px] swap ${direction === 'fwd' ? 'swap-fwd' : 'swap-back'}`}
-      >
-        {/* ---------------- Step 1: 要介護度 ---------------- */}
-        {currentStep === 1 && (
-          <div className="space-y-5">
-            <p className="text-sm text-stone-600">
-              ご本人が受けている介護認定を選んでください。まだ申請していない場合も選べます。
-            </p>
-
-            <div className="space-y-4">
-              {CARE_LEVEL_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-xs font-bold text-stone-700">{group.label}</span>
-                    {group.note && (
-                      <span className="text-[11px] text-stone-400">{group.note}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {group.levels.map((level) => {
-                      const isSelected = formData.careLevel === level;
-                      return (
-                        <button
-                          key={level}
-                          type="button"
-                          onClick={() => handleCareLevelChange(level)}
-                          aria-pressed={isSelected}
-                          className={`press inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm transition-colors ${
-                            isSelected
-                              ? 'border-orange-600 bg-orange-50 text-orange-900 font-bold'
-                              : 'border-stone-300 text-stone-700 hover:bg-stone-50 font-medium'
-                          }`}
-                        >
-                          {isSelected && <Check className="w-4 h-4 text-orange-600" />}
-                          {CARE_LEVEL_SHORT[level]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 選択中の区分の説明のみを1行で表示 */}
-            <div className="p-3.5 rounded-lg bg-stone-50 border border-stone-200 text-xs text-stone-600 leading-relaxed">
-              {CARE_LEVEL_LIMITS[formData.careLevel].description}
-            </div>
+      <div style={{ border: `2px solid ${INK}`, borderRadius: 16, background: '#fff', overflow: 'hidden' }}>
+        {/* ヘッダー：3分割の進捗 */}
+        <div style={{ padding: '28px 32px 24px', borderBottom: `2px solid ${INK}` }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 18 }} role="progressbar" aria-valuemin={1} aria-valuemax={3} aria-valuenow={step}>
+            {[1, 2, 3].map((n) => (
+              <span
+                key={n}
+                style={{
+                  flex: 1, height: 6, borderRadius: 999,
+                  background: n <= step ? PRIMARY : '#E8DCD3',
+                  transition: 'background-color .35s ease',
+                }}
+              />
+            ))}
           </div>
-        )}
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#B04512' }}>ステップ {step} / 3</span>
+          <h1 className="font-display" style={{ marginTop: 6, fontSize: 30, fontWeight: 700, color: INK }}>
+            {STEP_TITLES[step - 1]}
+          </h1>
+          <p style={{ marginTop: 10, fontSize: 15, lineHeight: 1.9, color: SUB }}>{STEP_HELPS[step - 1]}</p>
+        </div>
 
-        {/* ---------------- Step 2: 世帯状況 ---------------- */}
-        {currentStep === 2 && (
-          <div className="space-y-4">
-            <p className="text-sm text-stone-600">
-              同居家族の有無で、介護保険の生活援助が使えるかどうかが変わります。
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {HOUSEHOLDS.map((item) => {
-                const isSelected = formData.householdType === item.id;
-                const Icon = item.icon;
-                return (
+        <div style={{ padding: 32 }}>
+          {/* ========== ステップ1：ご本人のこと ========== */}
+          {step === 1 && (
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: SUB }}>要介護認定の区分</h2>
+              <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {CARE_ORDER.map((lv) => (
                   <button
-                    key={item.id}
+                    key={lv}
                     type="button"
-                    onClick={() => handleHouseholdChange(item.id)}
-                    aria-pressed={isSelected}
-                    className={`press text-left p-4 rounded-lg border transition-colors flex items-start gap-3 ${
-                      isSelected
-                        ? 'border-orange-600 bg-orange-50'
-                        : 'border-stone-300 hover:bg-stone-50'
-                    }`}
+                    onClick={() => setCareLevel(lv)}
+                    aria-pressed={formData.careLevel === lv}
+                    className="press-sm"
+                    style={pill(formData.careLevel === lv)}
                   >
-                    <Icon
-                      className={`w-5 h-5 mt-0.5 shrink-0 ${
-                        isSelected ? 'text-orange-600' : 'text-stone-400'
-                      }`}
-                    />
-                    <span>
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          className={`font-bold text-sm ${
-                            isSelected ? 'text-orange-900' : 'text-stone-900'
-                          }`}
-                        >
-                          {item.title}
-                        </span>
-                        {isSelected && <Check className="w-4 h-4 text-orange-600" />}
-                      </span>
-                      <span className="block text-xs text-stone-600 leading-relaxed mt-1">
-                        {item.desc}
-                      </span>
-                    </span>
+                    {CARE_SHORT[lv]}
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ---------------- Step 3: 困りごと（種類別） ---------------- */}
-        {currentStep === 3 && (
-          <div className="space-y-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-sm text-stone-600">
-                負担に感じていることを選んでください（複数可）。
-              </p>
-              <span className="shrink-0 text-xs font-bold text-orange-800 tabular-nums">
-                {formData.selectedNeeds.length} 件選択中
-              </span>
-            </div>
-
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-              {NEEDS_CATEGORIES.map((cat) => {
-                const tags = NEEDS_TAGS.filter((t) => t.category === cat.key);
-                if (tags.length === 0) return null;
-                const selectedCount = tags.filter((t) =>
-                  formData.selectedNeeds.includes(t.id)
-                ).length;
-
-                return (
-                  <div key={cat.key}>
-                    <div className="flex items-baseline gap-2 mb-2 pb-1.5 border-b border-stone-200">
-                      <span className="text-xs font-bold text-stone-800">{cat.label}</span>
-                      <span className="text-[11px] text-stone-400">{cat.hint}</span>
-                      {selectedCount > 0 && (
-                        <span className="ml-auto text-[11px] font-bold text-orange-700 tabular-nums">
-                          {selectedCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {tags.map((tag) => {
-                        const isSelected = formData.selectedNeeds.includes(tag.id);
-                        return (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            title={tag.description}
-                            onClick={() => toggleNeed(tag.id)}
-                            aria-pressed={isSelected}
-                            className={`press-sm inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${
-                              isSelected
-                                ? 'border-orange-600 bg-orange-50 text-orange-900 font-bold'
-                                : 'border-stone-300 text-stone-700 hover:bg-stone-50'
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3.5 h-3.5 text-orange-600" />}
-                            {tag.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ---------------- Step 4: タスクごとの発生タイミング ---------------- */}
-        {currentStep === 4 && (
-          <div className="space-y-4">
-            <p className="text-sm text-stone-600">
-              困りごとごとに、発生する曜日と時間帯を選んでください。次の画面で、この予定にサービスを自動で当てはめた結果が表示されます。
-            </p>
-
-            {formData.selectedNeeds.length === 0 ? (
-              <div className="p-6 rounded-lg border border-dashed border-stone-300 text-center text-sm text-stone-500">
-                困りごとがまだ選ばれていません。「戻る」から選択してください。
+                ))}
               </div>
-            ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-                {formData.selectedNeeds.map((needId) => {
-                  const tag = NEEDS_TAGS.find((t) => t.id === needId);
-                  if (!tag) return null;
-                  const timing = schedule[needId] ?? { days: [], periods: [] };
-                  // 重なりで上書きされた分を除いた、実際に確保できたコマ数
-                  const actual = Object.values(formData.slotNeeds).filter(
-                    (v) => v === needId
-                  ).length;
-                  const isWeekdays =
-                    timing.days.length === 5 && WEEKDAYS.every((d) => timing.days.includes(d));
-                  const isWeekend =
-                    timing.days.length === 2 && WEEKEND.every((d) => timing.days.includes(d));
-                  const isEveryDay = timing.days.length === 7;
-                  // 選んだ数と、実際に確保できた数の差＝他の困りごとに取られた分
-                  const requested = timing.days.length * timing.periods.length;
-                  const takenByOthers = Math.max(0, requested - actual);
+              <p style={note('#FFF3EA')}>{CARE_LEVEL_LIMITS[formData.careLevel].description}</p>
 
+              <h2 style={{ marginTop: 36, fontSize: 15, fontWeight: 700, color: SUB }}>ご本人の世帯</h2>
+              <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 10 }}>
+                {HOUSEHOLDS.map((h) => {
+                  const on = formData.householdType === h.id;
                   return (
-                    <div
-                      key={needId}
-                      className="rounded-lg border border-stone-200 overflow-hidden"
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => setHousehold(h.id)}
+                      aria-pressed={on}
+                      className="press"
+                      style={{
+                        padding: '18px 20px', borderRadius: 12, border: `2px solid ${INK}`,
+                        background: on ? PRIMARY : '#fff', textAlign: 'left',
+                        transition: 'background-color .2s ease',
+                      }}
                     >
-                      <div className="px-3.5 py-2.5 bg-stone-50 border-b border-stone-200 flex items-center justify-between gap-3">
-                        <span className="text-sm font-bold text-stone-900 truncate">
-                          {tag.name}
-                        </span>
-                        <span
-                          key={actual}
-                          className={`swap swap-tight shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full tabular-nums ${
-                            actual > 0
-                              ? 'bg-orange-50 text-orange-800 border border-orange-200'
-                              : 'bg-stone-100 text-stone-500 border border-stone-200'
-                          }`}
-                        >
-                          週 {actual} コマ
-                        </span>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: on ? '#fff' : INK }}>{h.title}</div>
+                      <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.8, color: on ? '#FFE6D6' : SUB }}>{h.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ========== ステップ2：困っていること ========== */}
+          {step === 2 && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
+                <span style={{ fontSize: 14, color: SUB }}>当てはまるものをすべて選んでください</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#B04512', fontVariantNumeric: 'tabular-nums' }}>
+                  {formData.selectedNeeds.length} 件
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxHeight: 460, overflowY: 'auto', paddingRight: 6 }}>
+                {NEEDS_CATEGORIES.map((cat) => {
+                  const tags = NEEDS_TAGS.filter((t) => t.category === cat.key);
+                  if (tags.length === 0) return null;
+                  return (
+                    <div key={cat.key}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingBottom: 8, borderBottom: '1px solid #E8DCD3' }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: INK }}>{cat.label}</span>
+                        <span style={{ fontSize: 13, color: '#8A7F76' }}>{cat.hint}</span>
                       </div>
-
-                      <div className="px-3.5 py-3 space-y-2.5">
-                        {/* 曜日 */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-[11px] text-stone-500 w-12 shrink-0">曜日</span>
-                          <button
-                            type="button"
-                            onClick={() => setTaskDays(needId, ALL_DAYS)}
-                            className={`px-2 py-1 rounded-md border text-[11px] font-bold transition-colors ${
-                              isEveryDay
-                                ? 'border-orange-600 bg-orange-50 text-orange-800'
-                                : 'border-stone-300 text-stone-600 hover:bg-stone-50'
-                            }`}
-                          >
-                            毎日
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTaskDays(needId, WEEKDAYS)}
-                            className={`px-2 py-1 rounded-md border text-[11px] font-bold transition-colors ${
-                              isWeekdays
-                                ? 'border-orange-600 bg-orange-50 text-orange-800'
-                                : 'border-stone-300 text-stone-600 hover:bg-stone-50'
-                            }`}
-                          >
-                            平日
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTaskDays(needId, WEEKEND)}
-                            className={`px-2 py-1 rounded-md border text-[11px] font-bold transition-colors ${
-                              isWeekend
-                                ? 'border-orange-600 bg-orange-50 text-orange-800'
-                                : 'border-stone-300 text-stone-600 hover:bg-stone-50'
-                            }`}
-                          >
-                            土日
-                          </button>
-                          <span className="w-px h-4 bg-stone-200 mx-0.5" />
-                          {DAYS_OF_WEEK.map((d) => {
-                            const on = timing.days.includes(d.key);
-                            return (
-                              <button
-                                key={d.key}
-                                type="button"
-                                aria-pressed={on}
-                                aria-label={d.label}
-                                onClick={() => toggleTaskDay(needId, d.key)}
-                                className={`press-sm w-7 h-7 rounded-md border text-[11px] font-bold transition-colors ${
-                                  on
-                                    ? 'border-orange-600 bg-orange-600 text-white'
-                                    : 'border-stone-300 text-stone-600 hover:bg-stone-50'
-                                }`}
-                              >
-                                {d.shortLabel}
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {/* 時間帯 */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-[11px] text-stone-500 w-12 shrink-0">時間帯</span>
-                          {TIME_PERIODS.map((tp) => {
-                            const on = timing.periods.includes(tp.key);
-                            return (
-                              <button
-                                key={tp.key}
-                                type="button"
-                                aria-pressed={on}
-                                onClick={() => toggleTaskPeriod(needId, tp.key)}
-                                className={`press-sm px-2.5 py-1 rounded-md border text-[11px] font-bold transition-colors ${
-                                  on
-                                    ? 'border-orange-600 bg-orange-50 text-orange-800'
-                                    : 'border-stone-300 text-stone-600 hover:bg-stone-50'
-                                }`}
-                              >
-                                {tp.label}
-                                <span className="ml-1 font-normal text-[11px] opacity-70">
-                                  {tp.timeRange}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {takenByOthers > 0 && (
-                          <p className="text-[11px] text-amber-700">
-                            選んだ {requested} コマのうち {takenByOthers} コマは、他の困りごとと重なっているためそちらが優先されています。
-                          </p>
-                        )}
+                      <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {tags.map((t) => {
+                          const on = formData.selectedNeeds.includes(t.id);
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              title={t.description}
+                              onClick={() => toggleNeed(t.id)}
+                              aria-pressed={on}
+                              className="press-sm"
+                              style={{ ...pill(on), minHeight: 46, padding: '0 16px', fontSize: 14 }}
+                            >
+                              {t.name}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            )}
 
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-stone-50 border border-stone-200 text-xs text-stone-600">
-              <CalendarDays className="w-4 h-4 text-stone-400 shrink-0" />
-              <span>
-                1週間で
-                <strong className="text-stone-900 tabular-nums mx-1">
-                  {Object.values(formData.slotNeeds).filter(Boolean).length}
-                </strong>
-                コマの困りごとが登録されています（最大28コマ）。同じ枠が重なった場合は、あとから選んだ困りごとが優先されます。
-              </span>
+              <p style={note('#FFF3EA')}>
+                曜日と時間帯は、選んだ内容からいったん自動で埋めます。次の画面のマス目を押せば、その場で直せます。
+              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ---------------- Step 5: 予算 ---------------- */}
-        {currentStep === 5 && (
-          <div className="space-y-5">
-            <p className="text-sm text-stone-600">
-              保険外サービス（自費・シルバー人材・互助）に月々出せる上限を設定してください。
-            </p>
-            <div className="bg-stone-50 p-6 rounded-lg border border-stone-200 text-center space-y-4">
-              <span className="text-xs font-semibold text-stone-500">月額の自己負担 上限</span>
-              <div className="text-4xl font-bold text-orange-700 tabular-nums">
-                {formData.monthlyBudget.toLocaleString()}
-                <span className="text-lg font-normal text-stone-600 ml-1">円 / 月</span>
+          {/* ========== ステップ3：月に出せる金額 ========== */}
+          {step === 3 && (
+            <div>
+              <div style={{ border: `2px solid ${INK}`, borderRadius: 12, padding: 28, textAlign: 'center', background: '#FFF3EA' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: SUB }}>月に出せる金額の上限</span>
+                <div
+                  className="font-display"
+                  style={{ marginTop: 10, fontSize: 52, fontWeight: 900, color: PRIMARY, fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}
+                >
+                  {formData.monthlyBudget.toLocaleString()} 円
+                </div>
+                <div style={{ marginTop: 20 }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200000"
+                    step="5000"
+                    aria-label="月に出せる金額"
+                    value={formData.monthlyBudget}
+                    onChange={(e) => setBudget(Number(e.target.value))}
+                    style={{ '--range-progress': `${(formData.monthlyBudget / 200000) * 100}%`, width: '100%', height: 24, cursor: 'pointer' } as React.CSSProperties}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 500, color: SUB, fontVariantNumeric: 'tabular-nums' }}>
+                  <span>0円</span><span>5万</span><span>10万</span><span>15万</span><span>20万</span>
+                </div>
               </div>
 
-              <input
-                type="range"
-                min="0"
-                max="200000"
-                step="5000"
-                aria-label="月額予算"
-                value={formData.monthlyBudget}
-                onChange={(e) => handleBudgetChange(Number(e.target.value))}
-                style={{ '--range-progress': `${(formData.monthlyBudget / 200000) * 100}%` } as React.CSSProperties}
-                className="w-full h-6 cursor-pointer"
-              />
+              <h2 style={{ marginTop: 32, fontSize: 15, fontWeight: 700, color: SUB }}>決める前に、相場です</h2>
+              <ul style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {MARKET_RATES.map((m) => (
+                  <li
+                    key={m.label}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16,
+                      padding: '12px 16px', borderRadius: 8, background: '#FAF5F1',
+                    }}
+                  >
+                    <span style={{ fontSize: 15, color: INK }}>{m.label}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#B04512', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                      {m.price}
+                    </span>
+                  </li>
+                ))}
+              </ul>
 
-              <div className="flex justify-between text-[11px] text-stone-400 font-medium tabular-nums">
-                <span>0円</span>
-                <span>5万円</span>
-                <span>10万円</span>
-                <span>15万円</span>
-                <span>20万円</span>
-              </div>
+              <p style={note('#FDE8DC')}>
+                <strong style={{ fontWeight: 700 }}>0円でもかまいません。</strong>
+                ボランティアのゴミ出し、社協の傾聴訪問、区の紙おむつ支給など、費用のかからない選択肢だけで組みます。
+              </p>
             </div>
+          )}
+        </div>
 
-            <div className="p-4 rounded-lg bg-orange-50 border border-orange-200 text-xs text-orange-900 leading-relaxed">
-              <strong>0円でも大丈夫です。</strong>{' '}
-              地域のボランティア、社協のサロン、自治体の助成（おむつ支給など）だけで組める案も探します。
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* フッター */}
-      <div className="bg-stone-50 border-t border-stone-200 px-6 py-4 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={prevStep}
-          disabled={currentStep === 1}
-          className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            currentStep === 1
-              ? 'text-stone-300 cursor-not-allowed'
-              : 'text-stone-700 hover:bg-stone-200'
-          }`}
+        {/* フッター */}
+        <div
+          style={{
+            padding: '20px 32px', borderTop: `2px solid ${INK}`, background: '#FFF3EA',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+          }}
         >
-          <ChevronLeft className="w-4 h-4" />
-          戻る
-        </button>
-
-        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => onSubmit(formData)}
-            className="text-xs text-stone-500 hover:text-stone-800 underline"
+            onClick={prev}
+            disabled={step === 1}
+            style={{
+              minHeight: 48, padding: '0 18px', borderRadius: 999,
+              fontSize: 15, fontWeight: 700,
+              color: step === 1 ? '#C4B5A8' : INK,
+              cursor: step === 1 ? 'not-allowed' : 'pointer',
+            }}
           >
-            入力を省略して結果を見る
+            ← 戻る
           </button>
-
           <button
             type="button"
-            onClick={nextStep}
-            className="press lift flex items-center gap-1.5 px-6 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-colors"
+            onClick={next}
+            className="press"
+            style={{
+              minHeight: 52, padding: '0 28px', borderRadius: 999,
+              border: `2px solid ${INK}`, background: PRIMARY, color: '#fff',
+              fontSize: 16, fontWeight: 700, boxShadow: `0 3px 0 ${INK}`,
+            }}
           >
-            {currentStep === 5 ? 'サービスを当てはめる' : '次へ'}
-            <ChevronRight className="w-4 h-4" />
+            {step === 3 ? '1週間の表をつくる →' : '次へ →'}
           </button>
         </div>
       </div>

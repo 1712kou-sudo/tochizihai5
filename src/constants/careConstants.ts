@@ -456,61 +456,58 @@ export const RESTRICTION_RULES: RestrictionRule[] = [
 ];
 
 /**
- * 入力例サンプル（練馬区実データ対応版）
- * 要介護2・独居・家族が遠方のケース
- * - bath_care は平日日中に配置（NRM-001 は平日日中のみ対応）
- * - safety_check_day は NRM-010 が 24/7 カバー
- * - スライダーを 0 に下げると bath_care（月約1,730円）が外れる動作を確認できる
+ * 入力例サンプル（要介護2・同居家族あり・家族負担が大きいケース）
  */
 export const DEMO_SAMPLE_INPUT: UserInputData = {
   careLevel: 'care_2',
-  householdType: 'single',
+  householdType: 'living_together',
   selectedNeeds: [
     'cooking',
-    'bath_care',
-    'safety_check_day',
     'hospital_escort',
+    'bath_care',
     'day_service',
+    'gardening_weed',
+    'meal_delivery_check',
     'cleaning',
+    'night_safety',
     'short_stay',
-    'weekend_relief',
   ],
   slotNeeds: {
     'mon-morning': 'cooking',
-    'mon-daytime': 'bath_care',
+    'mon-daytime': 'day_service',
     'mon-evening': 'cooking',
-    'mon-night': 'safety_check_day',
+    'mon-night': 'night_safety',
 
     'tue-morning': 'cooking',
     'tue-daytime': 'hospital_escort',
-    'tue-evening': 'cooking',
-    'tue-night': null,
+    'tue-evening': 'bath_care',
+    'tue-night': 'night_safety',
 
     'wed-morning': 'cooking',
-    'wed-daytime': 'bath_care',
+    'wed-daytime': 'cleaning',
     'wed-evening': 'cooking',
     'wed-night': null,
 
     'thu-morning': 'cooking',
     'thu-daytime': 'day_service',
     'thu-evening': 'cooking',
-    'thu-night': 'safety_check_day',
+    'thu-night': 'night_safety',
 
     'fri-morning': 'cooking',
-    'fri-daytime': 'cleaning',
-    'fri-evening': 'cooking',
+    'fri-daytime': 'meal_delivery_check',
+    'fri-evening': 'bath_care',
     'fri-night': null,
 
     'sat-morning': 'cooking',
-    'sat-daytime': 'short_stay',
-    'sat-evening': 'weekend_relief',
-    'sat-night': null,
+    'sat-daytime': 'gardening_weed',
+    'sat-evening': 'cooking',
+    'sat-night': 'night_safety',
 
     'sun-morning': 'cooking',
     'sun-daytime': 'short_stay',
     'sun-evening': 'cooking',
-    'sun-night': null,
+    'sun-night': 'night_safety',
   },
-  monthlyBudget: 5000,
-  postalCode: '176-0001',
+  monthlyBudget: 25000,
+  postalCode: '154-0004',
 };
