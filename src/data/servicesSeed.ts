@@ -919,8 +919,19 @@ export const SERVICES_SEED_SETAGAYA: Service[] = [
   },
 ];
 
-// 全サービス統合（市区町村上乗せ + 総合事業J1 + 介護保険 + 世田谷区）
-export const SERVICES_SEED_ALL: Service[] = [...SERVICES_SEED, ...INSURANCE_SERVICES_SEED, ...SERVICES_SEED_SETAGAYA];
+// CSBA 認証登録事業者（保険外自費サービス）
+import { CSBA_SERVICES, CSBA_PROVIDER } from './servicesSeed_csba';
+
+// 全サービス統合（市区町村上乗せ + 総合事業J1 + 介護保険 + 世田谷区 + CSBA保険外）
+export const SERVICES_SEED_ALL: Service[] = [
+  ...SERVICES_SEED,
+  ...INSURANCE_SERVICES_SEED,
+  ...SERVICES_SEED_SETAGAYA,
+  ...CSBA_SERVICES,
+];
 
 // 後方互換エクスポート（既存コードが ALL_SERVICES を参照）
 export const ALL_SERVICES: Service[] = SERVICES_SEED_ALL;
+
+// 全プロバイダー統合
+export { CSBA_PROVIDER };
