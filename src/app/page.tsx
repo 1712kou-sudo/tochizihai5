@@ -433,6 +433,7 @@ export default function HomePage() {
         slot={activeSlot}
         careLevel={userInput.careLevel}
         householdType={userInput.householdType}
+        allServices={services}
         onClose={() => setActiveSlot(null)}
         onSelectService={handleSelectServiceForSlot}
         onUpdatePerson={handleUpdatePerson}

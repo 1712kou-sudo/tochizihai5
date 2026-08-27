@@ -33,6 +33,7 @@ interface SlotDetailModalProps {
   slot: TimelineSlot | null;
   careLevel: CareLevel;
   householdType: HouseholdType;
+  allServices: Service[];
   onClose: () => void;
   onSelectService: (service: Service | null) => void;
   onUpdatePerson: (personName: string) => void;
@@ -73,6 +74,7 @@ const SlotDetailModalInner: React.FC<SlotDetailModalInnerProps> = ({
   slot,
   careLevel,
   householdType,
+  allServices,
   onClose,
   onSelectService,
   onUpdatePerson,
@@ -90,7 +92,7 @@ const SlotDetailModalInner: React.FC<SlotDetailModalInnerProps> = ({
 
   // 候補サービスを検索
   const candidates: Service[] = slot.needsTagId
-    ? getCandidatesForSlot(slot.day, slot.period, slot.needsTagId, careLevel, householdType)
+    ? getCandidatesForSlot(slot.day, slot.period, slot.needsTagId, careLevel, householdType, allServices)
     : [];
 
   const handleSavePerson = () => {
