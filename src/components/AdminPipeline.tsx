@@ -239,17 +239,27 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
     setIsCollecting(false);
   };
 
-  const filteredServices = services.filter((s) => {
-    if (filterStatus !== 'all' && s.status !== filterStatus) return false;
-    if (
-      searchQuery &&
-      !s.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !s.providerName.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
-    }
-    return true;
-  });
+  const STATUS_ORDER: Record<string, number> = { draft: 0, approved: 1, stale: 2, rejected: 3 };
+  const filteredServices = services
+    .filter((s) => {
+      if (filterStatus !== 'all' && s.status !== filterStatus) return false;
+      if (
+        searchQuery &&
+        !s.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !s.providerName.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const statusDiff = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
+      if (statusDiff !== 0) return statusDiff;
+      // 同じステータス内では最近承認されたものを先頭に
+      const da = a.verifiedAt ?? '';
+      const db = b.verifiedAt ?? '';
+      return db.localeCompare(da);
+    });
 
   const filteredIds = filteredServices.map((s) => s.id);
   const allFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
@@ -639,7 +649,7 @@ export const AdminPipeline: React.FC<AdminPipelineProps> = ({ services, onUpdate
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {filteredServices.slice(0, 30).map((srv) => {
+              {filteredServices.slice(0, 200).map((srv) => {
                 const schemeInfo = SCHEME_LABELS[srv.scheme];
                 const isSelected = selectedIds.has(srv.id);
                 return (
